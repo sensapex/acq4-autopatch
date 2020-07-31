@@ -1,7 +1,7 @@
 import threading
 import time
 
-import acq4.pyqtgraph as pg
+import pyqtgraph as pg
 import numpy as np
 from acq4.util import Qt
 from acq4.util.threadrun import runInGuiThread

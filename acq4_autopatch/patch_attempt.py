@@ -2,9 +2,9 @@ import json
 import traceback
 from collections import OrderedDict
 
-import acq4.pyqtgraph as pg
+import pyqtgraph as pg
 import numpy as np
-from acq4.pyqtgraph import ptime
+from pyqtgraph import ptime
 from acq4.util import Qt
 
 

@@ -2,7 +2,7 @@ from __future__ import print_function, division
 
 import os
 
-import acq4.pyqtgraph as pg
+import pyqtgraph as pg
 from acq4.Manager import getManager
 from acq4.modules.Module import Module
 from acq4.util import Qt
