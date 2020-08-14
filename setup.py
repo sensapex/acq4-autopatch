@@ -1,6 +1,6 @@
 from setuptools import setup, find_packages
 
-packages = [x for x in find_packages('.') if x.startswith('acq4_autopatch')]
+packages = [x for x in find_packages(".") if x.startswith("acq4_autopatch")]
 
 setup(
     name="acq4_autopatch",

@@ -17,7 +17,7 @@ class TargetMotionPlanner(PipetteMotionPlanner):
         return pip._moveToGlobal(target, speed=speed)
 
 
-Pipette.defaultMotionPlanners['target'] = TargetMotionPlanner
+Pipette.defaultMotionPlanners["target"] = TargetMotionPlanner
 
 
 class ApproachMotionPlanner(PipetteMotionPlanner):
@@ -32,4 +32,4 @@ class ApproachMotionPlanner(PipetteMotionPlanner):
         return pip._moveToGlobal(target, speed=speed)
 
 
-Pipette.defaultMotionPlanners['approach'] = ApproachMotionPlanner
+Pipette.defaultMotionPlanners["approach"] = ApproachMotionPlanner

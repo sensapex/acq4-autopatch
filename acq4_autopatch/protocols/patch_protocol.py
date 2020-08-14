@@ -15,6 +15,7 @@ class PatchProtocol(object):
     - Various abort procedures
     - Clean / swap pipette
     """
+
     name = None
 
     def __init__(self, patchThread, patchAttempt):
@@ -64,7 +65,7 @@ class PatchProtocol(object):
             if allDone:
                 break
             if timeout is not None and time.time() - start > timeout:
-                raise futures[0].Timeout("Timed out waiting for %r" % futures)
+                raise futures[0].Timeout(f"Timed out waiting for {futures!r}")
 
 
 class Locker(object):

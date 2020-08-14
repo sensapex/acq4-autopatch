@@ -10,10 +10,10 @@ class AutopatchCustomStage(Sensapex):
         if not protected:
             return Sensapex._move(self, abs, rel, speed, linear)
 
-        wells = np.array(self.config['wellPositions']) * 1e9
-        radius = self.config['wellRadius'] * 1e9
-        wellZ = self.config['wellMaxZ'] * 1e9
-        safeZ = self.config['safeMaxZ'] * 1e9
+        wells = np.array(self.config["wellPositions"]) * 1e9
+        radius = self.config["wellRadius"] * 1e9
+        wellZ = self.config["wellMaxZ"] * 1e9
+        safeZ = self.config["safeMaxZ"] * 1e9
 
         pos1 = np.array(self.getPosition())
         pos2 = np.array(self._toAbsolutePosition(abs, rel))
@@ -51,18 +51,18 @@ class AutopatchCustomStage(Sensapex):
             wp1 = pos1.copy()
             wp1[2] = min(safeZ, pos2[2])
             lastZ = wp1[2]
-            path.append({'abs': wp1, 'speed': 'fast', 'protected': False})
+            path.append({"abs": wp1, "speed": "fast", "protected": False})
             # print("   - move focus down")
 
         # Next move just XY
         wp2 = pos2.copy()
         wp2[2] = lastZ
-        path.append({'abs': wp2, 'speed': speed, 'protected': False})
+        path.append({"abs": wp2, "speed": speed, "protected": False})
         # print("   - move xy")
 
         # Finally correct Z if needed
         if wp2[2] != pos2[2]:
-            path.append({'abs': pos2, 'speed': 'fast', 'protected': False})
+            path.append({"abs": pos2, "speed": "fast", "protected": False})
             # print("   - move focus up")
 
         return self.movePath(path)

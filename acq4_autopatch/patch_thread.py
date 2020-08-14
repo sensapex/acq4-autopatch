@@ -17,7 +17,7 @@ class PatchThread(Thread):
         """
 
     def __init__(self, dev, module):
-        Thread.__init__(self, name="VoltageImaging_PatchThread_%s" % dev.name())
+        Thread.__init__(self, name=f"VoltageImaging_PatchThread_{dev.name()}")
         self.dev = dev
         self.jobQueue = module.jobQueue
         self.module = module
@@ -51,13 +51,13 @@ class PatchThread(Thread):
 
             try:
                 pa.startLogging()
-                pa.setStatus("start patch protocol: %s" % pa.protocol.name)
+                pa.setStatus(f"start patch protocol: {pa.protocol.name}")
                 protocol = pa.protocol(self, pa)
                 protocol.runPatchProtocol()
                 if pa.error is None:
                     pa.setStatus("success")
                 else:
-                    pa.setStatus("failed: " + str(pa.error[1]))
+                    pa.setStatus(f"failed: {str(pa.error[1])}")
             except self.Stopped:
                 protocol.abortPatchProtocol()
                 pa.setStatus("aborted")

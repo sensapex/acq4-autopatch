@@ -2,15 +2,16 @@ import json
 import traceback
 from collections import OrderedDict
 
-import pyqtgraph as pg
 import numpy as np
-from pyqtgraph import ptime
+import pyqtgraph as pg
 from acq4.util import Qt
+from pyqtgraph import ptime
 
 
 class PatchAttempt(Qt.QObject):
     """Stores 3D location, status, and results for a point to be patched.
     """
+
     statusChanged = Qt.Signal(object, object)  # self, status
     newEvent = Qt.Signal(object, object)  # self, event
 
@@ -50,12 +51,16 @@ class PatchAttempt(Qt.QObject):
 
     def setStatus(self, status):
         self.status = status
-        self.log.append(OrderedDict([
-            ('device', "None" if self.pipette is None else self.pipette.name()),
-            ('event_time', ptime.time()),
-            ('event', 'statusChanged'),
-            ('status', status),
-        ]))
+        self.log.append(
+            OrderedDict(
+                [
+                    ("device", "None" if self.pipette is None else self.pipette.name()),
+                    ("event_time", ptime.time()),
+                    ("event", "statusChanged"),
+                    ("status", status),
+                ]
+            )
+        )
         self.statusChanged.emit(self, status)
 
     def assignPipette(self, pip):
@@ -81,20 +86,22 @@ class PatchAttempt(Qt.QObject):
         except Exception:
             print(repr(ev))
             raise
-        with open(self.logFile.name(), 'a') as fh:
+        with open(self.logFile.name(), "a") as fh:
             fh.write(ev)
-            fh.write('\n')
+            fh.write("\n")
 
     def setError(self, excinfo):
         self.error = excinfo
         exclass, exc, tb = excinfo
-        self.setStatus('error during "%s" : %s' % (self.status, str(exc)))
-        ev = OrderedDict([
-            ('device', "None" if self.pipette is None else self.pipette.name()),
-            ('event_time', ptime.time()),
-            ('event', 'error'),
-            ('error', traceback.format_exception(*excinfo)),
-        ])
+        self.setStatus(f'error during "{self.status}" : {str(exc)}')
+        ev = OrderedDict(
+            [
+                ("device", "None" if self.pipette is None else self.pipette.name()),
+                ("event_time", ptime.time()),
+                ("event", "error"),
+                ("error", traceback.format_exception(*excinfo)),
+            ]
+        )
         self.pipetteEvent(self.pipette, ev)
 
     def pipetteTargetPosition(self):
@@ -129,15 +136,15 @@ class PatchAttempt(Qt.QObject):
         """
         log = [
             "========================================",
-            "       Patch attempt %d" % self.pid,
-            "       Current status: %s" % self.status,
+            f"       Patch attempt {self.pid:d}",
+            f"       Current status: {self.status}",
             "========================================",
             "Event log:",
         ]
         for event in self.log:
-            log.append("  ".join(["%s=%s" % (k, v) for k, v in event.items()]))
+            log.append("  ".join([f"{k}={v}" for k, v in event.items()]))
         if self.error is not None:
             log.append("========================================")
             log.append("Error:")
             log.extend(traceback.format_exception(*self.error))
-        return '\n'.join(log)
+        return "\n".join(log)

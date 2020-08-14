@@ -1,8 +1,8 @@
 import threading
 import time
 
-import pyqtgraph as pg
 import numpy as np
+import pyqtgraph as pg
 from acq4.util import Qt
 from acq4.util.threadrun import runInGuiThread
 
@@ -12,6 +12,7 @@ from .patch_protocol import PatchProtocol
 class RecalibrateProtocol(PatchProtocol):
     """Base class for protocols that visit each target +10um and measure the pipette calibration error 
     """
+
     name = None
 
     def __init__(self, patchThread, patchAttempt):
@@ -30,29 +31,29 @@ class RecalibrateProtocol(PatchProtocol):
         calibrationHeight = 30e-6
 
         pa = self.patchAttempt
-        if not hasattr(pa, 'originalPosition'):
+        if not hasattr(pa, "originalPosition"):
             pa.originalPosition = np.array(pa.position)
 
         # move to 100 um above current position
         pos = self.dev.pipetteDevice.globalPosition()
         pos[2] += 100e-6
-        fut = self.dev.pipetteDevice._moveToGlobal(pos, 'fast')
+        fut = self.dev.pipetteDevice._moveToGlobal(pos, "fast")
         self.wait([fut])
 
         # move to 100 um above target z value
         pos = pa.pipetteTargetPosition()
         pos[2] += 100e-6
-        fut = self.dev.pipetteDevice._moveToGlobal(pos, 'fast')
+        fut = self.dev.pipetteDevice._moveToGlobal(pos, "fast")
         self.wait([fut])
 
-        # set pipette target position 
+        # set pipette target position
         self.dev.pipetteDevice.setTarget(pa.pipetteTargetPosition())
 
         # move pipette to 10 um above corrected target
         pipPos = pa.pipetteTargetPosition() + np.array([0, 0, calibrationHeight])
         # don't use target move here; we don't need all the obstacle avoidance.
         # fut = self.dev.pipetteDevice.goTarget(speed='fast')
-        pfut = self.dev.pipetteDevice._moveToGlobal(pipPos, speed='slow')
+        pfut = self.dev.pipetteDevice._moveToGlobal(pipPos, speed="slow")
 
         with self.stageCameraLock.acquire() as fut:
             pa.setStatus("Waiting for stage/camera")
@@ -60,7 +61,7 @@ class RecalibrateProtocol(PatchProtocol):
 
             # move stage/focus above actual target
             camPos = pa.globalTargetPosition() + np.array([0, 0, calibrationHeight])
-            cfut = self.camera.moveCenterToGlobal(camPos, 'fast')
+            cfut = self.camera.moveCenterToGlobal(camPos, "fast")
             self.wait([pfut, cfut], timeout=None)
 
             # Offset from target to where pipette actually landed
@@ -102,7 +103,7 @@ class AutoRecalibrateProtocol(RecalibrateProtocol):
         #  - z is in focus on the pipette tip
         #  - pipette x,y is over the target
         for i in range(4):
-            cameraPos = self.camera.globalCenterPosition('roi')
+            cameraPos = self.camera.globalCenterPosition("roi")
 
             # pipette position according to manipulator
             reportedPos = np.array(self.dev.pipetteDevice.globalPosition())
@@ -133,19 +134,19 @@ class AutoRecalibrateProtocol(RecalibrateProtocol):
             if focusError > 3e-6:
                 # refocus on pipette tip (don't move pipette in z because if error prediction is wrong, we could crash)
                 cameraPos[2] = measuredPos[2]
-                futs.append(self.camera.moveCenterToGlobal(cameraPos, 'slow'))
+                futs.append(self.camera.moveCenterToGlobal(cameraPos, "slow"))
 
             if targetError > 1.5e-6:
                 # reposition pipette x,y closer to target
                 ppos = reportedPos.copy()
                 ppos[:2] += targetDiff
-                futs.append(self.dev.pipetteDevice._moveToGlobal(ppos, 'slow'))
+                futs.append(self.dev.pipetteDevice._moveToGlobal(ppos, "slow"))
 
             if len(futs) > 0:
                 # wait for requested moves to complete and try again
                 self.wait(futs)
                 time.sleep(0.3)  # wait for positions to catch up.. we can remove this after bug fixed!
-                pa.setStatus("Measuring pipette error: adjust and iterate  (%d)" % i)
+                pa.setStatus(f"Measuring pipette error: adjust and iterate  ({i:d})")
             else:
                 # no moves needed this round; we are done.
                 break
@@ -153,10 +154,10 @@ class AutoRecalibrateProtocol(RecalibrateProtocol):
         # Now decide whether to pass or fail this calibration.
         if focusErrVals[-1] > 3e-6 or targetErrVals[-1] > 3e-6 or perfVals[-1] < 0.5:
             raise RuntimeError(
-                "Measuring pipette error: failed  (focus error: %s  target error: %s  correlation: %s)" % (
-                focusErrVals, targetErrVals, perfVals))
+                f"Measuring pipette error: failed  (focus error: {focusErrVals}  target error: {targetErrVals}  correlation: {perfVals})"
+            )
 
-        pa.setStatus("Measuring pipette error: success %s" % pipetteDiff)
+        pa.setStatus(f"Measuring pipette error: success {pipetteDiff}")
         return pipetteDiff
 
     def showErrorLine(self, pt1, pt2):
@@ -167,7 +168,7 @@ class AutoRecalibrateProtocol(RecalibrateProtocol):
     def _showErrorLine(self, pt1, pt2):
         self._removeErrorLine()
         self.line = pg.QtGui.QGraphicsLineItem(pt1[0], pt1[1], pt2[0], pt2[1])
-        self.line.setPen(pg.mkPen('r'))
+        self.line.setPen(pg.mkPen("r"))
         self.cameraMod.window().addItem(self.line)
 
     def _removeErrorLine(self):
@@ -178,7 +179,7 @@ class AutoRecalibrateProtocol(RecalibrateProtocol):
 
 
 class ManualRecalibrateProtocol(RecalibrateProtocol):
-    name = 'manual recalibrate'
+    name = "manual recalibrate"
 
     def __init__(self, patchThread, patchAttempt):
         RecalibrateProtocol.__init__(self, patchThread, patchAttempt)
@@ -186,7 +187,8 @@ class ManualRecalibrateProtocol(RecalibrateProtocol):
     def runPatchProtocol(self):
         # Grab click events fom the camera module while this protocol is running
         self.cameraMod.window().getView().scene().sigMouseClicked.connect(
-            self.cameraModuleClicked, Qt.Qt.DirectConnection)
+            self.cameraModuleClicked, Qt.Qt.DirectConnection
+        )
         try:
             RecalibrateProtocol.runPatchProtocol(self)
         finally:

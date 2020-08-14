@@ -21,6 +21,7 @@ class TaskRunnerPatchProtocol(PatchProtocol):
     - Clean pipette
     - Move pipette home and request swap (if broken / clogged)
     """
+
     name = "task runner"
 
     def __init__(self, patchThread, patchAttempt):
@@ -32,8 +33,8 @@ class TaskRunnerPatchProtocol(PatchProtocol):
         self.scope = self.camera.getScopeDevice()
 
         man = getManager()
-        self.dh = man.getCurrentDir().mkdir("patch_attempt_%04d" % self.patchAttempt.pid, autoIncrement=True)
-        patchAttempt.setLogFile(self.dh['patch.log'])
+        self.dh = man.getCurrentDir().mkdir(f"patch_attempt_{self.patchAttempt.pid:04d}", autoIncrement=True)
+        patchAttempt.setLogFile(self.dh["patch.log"])
 
         self.stateQueue = queue.Queue()
         # this code is running in a thread, so it is necessary to specify that
@@ -50,14 +51,14 @@ class TaskRunnerPatchProtocol(PatchProtocol):
             self.cleanPipette()
 
         try:
-            self.dev.setState('bath')
+            self.dev.setState("bath")
             time.sleep(5)
 
             self.patchCell()
 
             finalState = self.dev.getState()
-            if finalState.stateName != 'whole cell':
-                raise Exception("Failed to reach whole cell state (ended at %s)." % finalState)
+            if finalState.stateName != "whole cell":
+                raise Exception(f"Failed to reach whole cell state (ended at {finalState}).")
 
             with self.stageCameraLock.acquire() as fut:
                 pa.setStatus("Waiting for stage/camera")
@@ -86,21 +87,21 @@ class TaskRunnerPatchProtocol(PatchProtocol):
 
         # move to 100 um above cell, fast
         pos = np.array(targetPos) + np.array([100e-6, 100e-6, 100e-6])
-        fut = self.dev.pipetteDevice._moveToGlobal(pos, speed='fast')
+        fut = self.dev.pipetteDevice._moveToGlobal(pos, speed="fast")
         self.wait([fut])
 
         # move to 10 um above cell, slow
         pos = np.array(targetPos) + np.array([0, 0, 10e-6])
         # don't use target move here; we don't need all the obstacle avoidance.
         # fut = self.dev.pipetteDevice.goTarget(speed='fast')
-        fut = self.dev.pipetteDevice._moveToGlobal(pos, speed='slow')
+        fut = self.dev.pipetteDevice._moveToGlobal(pos, speed="slow")
         self.wait([fut])
 
         self.clearStateQueue()
 
         # kick off cell detection; wait until patched or failed
         pa.setStatus("cell patching")
-        self.dev.setState('cell detect')
+        self.dev.setState("cell detect")
         while True:
             self.checkStop()
             try:
@@ -108,10 +109,10 @@ class TaskRunnerPatchProtocol(PatchProtocol):
             except queue.Empty:
                 continue
 
-            if state.stateName in ('whole cell', 'fouled', 'broken'):
+            if state.stateName in ("whole cell", "fouled", "broken"):
                 return
             else:
-                pa.setStatus("cell patching: %s" % state.stateName)
+                pa.setStatus(f"cell patching: {state.stateName}")
 
             while True:
                 try:
@@ -134,11 +135,11 @@ class TaskRunnerPatchProtocol(PatchProtocol):
         """
         # focus camera on cell
         pa.setStatus("focus on cell")
-        self.camera.moveCenterToGlobal(pa.globalTargetPosition(), speed='fast', center='roi').wait()
+        self.camera.moveCenterToGlobal(pa.globalTargetPosition(), speed="fast", center="roi").wait()
 
         man = getManager()
-        turret = man.getDevice('FilterTurret')
-        illum = man.getDevice('Illumination')
+        turret = man.getDevice("FilterTurret")
+        illum = man.getDevice("Illumination")
 
         # set filter wheel / illumination
         turret.setPosition(1).wait()
@@ -163,7 +164,7 @@ class TaskRunnerPatchProtocol(PatchProtocol):
         try:
             # take another picture
             cameraParams = self.camera.getParams()
-            self.camera.setParams({'exposure': 0.05, 'binning': (4, 4)})
+            self.camera.setParams({"exposure": 0.05, "binning": (4, 4)})
 
             frame = self.camera.acquireFrames(n=1, stack=False)
             frame.saveImage(self.dh, "fluor_image.tif")
@@ -172,21 +173,28 @@ class TaskRunnerPatchProtocol(PatchProtocol):
             # TODO: select correct task runner for this pipette
             taskrunner = None
             for mod in man.listModules():
-                if not mod.startswith('Task Runner'):
+                if not mod.startswith("Task Runner"):
                     continue
                 mod = man.getModule(mod)
                 if self.dev.clampDevice.name() in mod.docks:
                     taskrunner = mod
                     break
 
-            assert taskrunner is not None, "No task runner found that uses %s" % self.dev.clampDevice.name()
+            assert taskrunner is not None, f"No task runner found that uses {self.dev.clampDevice.name()}"
 
             # 300 Hz
             # self.camera.setParams({'regionH': 700, 'regionY': 680, 'regionX': 8, 'regionW': 2028, 'exposure': 0.0030013})
             # 1kHz
-            self.camera.setParams({
-                'regionH': 164, 'regionY': 940, 'regionX': 8, 'regionW': 2032, 'exposure': 0.0010134,
-                'binning': (4, 4)})
+            self.camera.setParams(
+                {
+                    "regionH": 164,
+                    "regionY": 940,
+                    "regionX": 8,
+                    "regionW": 2032,
+                    "exposure": 0.0010134,
+                    "binning": (4, 4),
+                }
+            )
 
             # prepare camera to be triggered by the DAQ for this pipette
             self.configureCamera()
@@ -217,16 +225,16 @@ class TaskRunnerPatchProtocol(PatchProtocol):
         """
         # note: we'd love it if the camera and DAQ could just automatically decide which trigger
         # channels to use, but that's not supported yet so this is a temporary workaround.
-        if 'cameraChannels' in self.module.config:
-            exp, trig = self.module.config['cameraChannels'][self.dev.name()]
-            self.camera.reconfigureChannel('exposure', {'channel': exp})
-            self.camera.reconfigureChannel('trigger', {'channel': trig})
+        if "cameraChannels" in self.module.config:
+            exp, trig = self.module.config["cameraChannels"][self.dev.name()]
+            self.camera.reconfigureChannel("exposure", {"channel": exp})
+            self.camera.reconfigureChannel("trigger", {"channel": trig})
 
     def cleanPipette(self):
         pa = self.patchAttempt
         pa.setStatus("cleaning pipette")
         self.clearStateQueue()
-        fut = self.dev.setState('clean')
+        fut = self.dev.setState("clean")
 
         # wait for cleaning to finish
         self.wait([fut], timeout=120)
@@ -234,6 +242,6 @@ class TaskRunnerPatchProtocol(PatchProtocol):
     def swapPipette(self):
         pa = self.patchAttempt
         pa.setStatus("requesting new pipette")
-        self.dev.setState('out')
-        self.dev.goHome('fast')
+        self.dev.setState("out")
+        self.dev.goHome("fast")
         self.dev.requestNewPipette()

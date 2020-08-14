@@ -14,12 +14,10 @@ from .patch_attempt import PatchAttempt
 from .patch_thread import PatchThread
 from .protocols import allPatchProtocols
 
-MainForm = Qt.importTemplate('.main_window')
+MainForm = Qt.importTemplate(".main_window")
 
 
 class VoltageImagingModule(Module):
-    """
-    """
     moduleDisplayName = "Voltage Imaging"
     moduleCategory = "Acquisition"
 
@@ -32,7 +30,7 @@ class VoltageImagingModule(Module):
         self._cammod = None
         self._camdev = None
         self._nextPointID = 0
-        self._plateCenter = config.get('plateCenter', (0, 0, 0))
+        self._plateCenter = config.get("plateCenter", (0, 0, 0))
 
         Module.__init__(self, manager, name, config)
 
@@ -50,7 +48,7 @@ class VoltageImagingModule(Module):
 
         # hard-code pipette name => status text box assignments
         # we'd have to rewrite this if we move beyond 4 pipettes or want to rename them..
-        self.pipStatusText = {'PatchPipette%d' % i: getattr(self.ui, 'pip%dStatus' % i) for i in range(1, 5)}
+        self.pipStatusText = {f"PatchPipette{i:d}": getattr(self.ui, f"pip{i:d}Status") for i in range(1, 5)}
 
         self.win.show()
 
@@ -68,35 +66,36 @@ class VoltageImagingModule(Module):
         pc = self.plateCenter()
         self.plateCenterLines = [
             pg.InfiniteLine(pos=pc[:2], angle=0, movable=False),
-            pg.InfiniteLine(pos=pc[:2], angle=90, movable=False)
+            pg.InfiniteLine(pos=pc[:2], angle=90, movable=False),
         ]
         for line in self.plateCenterLines:
             camMod.window().addItem(line)
         radius = 5e-3
-        self.wellCircles = [Qt.QGraphicsEllipseItem(x - radius, y - radius, radius * 2, radius * 2) for x, y in
-                            config['wellPositions']]
+        self.wellCircles = [
+            Qt.QGraphicsEllipseItem(x - radius, y - radius, radius * 2, radius * 2) for x, y in config["wellPositions"]
+        ]
         for wc in self.wellCircles:
-            wc.setPen(pg.mkPen('y'))
+            wc.setPen(pg.mkPen("y"))
             camMod.window().addItem(wc)
 
         cam = self.getCameraDevice()
         cam.sigGlobalTransformChanged.connect(self.cameraTransformChanged)
 
         # allow to disable safe move in config
-        self.safeMoveEnabled = config.get('safeMove', True)
+        self.safeMoveEnabled = config.get("safeMove", True)
 
-        self.jobQueue = JobQueue(config['patchDevices'], self)
+        self.jobQueue = JobQueue(config["patchDevices"], self)
 
         self.threads = []
-        cam = manager.getDevice(config['imagingDevice'])
-        for pipName in config['patchDevices']:
+        cam = manager.getDevice(config["imagingDevice"])
+        for pipName in config["patchDevices"]:
             pip = manager.getDevice(pipName)
             pip.setActive(True)
 
             # Write state config parameters to pipette state manager.
             # This does not play nicely with others; perhaps we should have our own state manager.
             stateConfig = pip.stateManager().stateConfig
-            for k, v in config.get('patchStates', {}).items():
+            for k, v in config.get("patchStates", {}).items():
                 stateConfig.setdefault(k, {})
                 stateConfig[k].update(v)
 
@@ -121,7 +120,7 @@ class VoltageImagingModule(Module):
     def getCameraModule(self):
         if self._cammod is None:
             manager = getManager()
-            mods = manager.listInterfaces('cameraModule')
+            mods = manager.listInterfaces("cameraModule")
             if len(mods) == 0:
                 raise Exception("Camera module required")
             self._cammod = manager.getModule(mods[0])
@@ -130,14 +129,15 @@ class VoltageImagingModule(Module):
     def getCameraDevice(self):
         if self._camdev is None:
             manager = getManager()
-            camName = self.config.get('imagingDevice', None)
+            camName = self.config.get("imagingDevice", None)
             if camName is None:
-                cams = manager.listInterfaces('camera')
+                cams = manager.listInterfaces("camera")
                 if len(cams) == 1:
                     camName = cams[0]
                 else:
                     raise Exception(
-                        "Single camera device required (found %d) or 'imagingDevice' key in configuration." % len(cams))
+                        f"Single camera device required (found {len(cams):d}) or 'imagingDevice' key in configuration."
+                    )
             self._camdev = manager.getDevice(camName)
         return self._camdev
 
@@ -174,7 +174,7 @@ class VoltageImagingModule(Module):
             c = pg.QtGui.QGraphicsEllipseItem(0, 0, 1, 1)
             c.scale(r * 2, r * 2)
             c.setPos(-r, -r)
-            c.setPen(pg.mkPen('b'))
+            c.setPen(pg.mkPen("b"))
             c.setParentItem(target)
             target.circles.append(c)
 
@@ -260,18 +260,18 @@ class VoltageImagingModule(Module):
 
     def jobStatusChanged(self, job, status):
         item = job.treeItem
-        pip = job.pipette.name() if job.pipette is not None else ''
-        item.setText(1, '' if job.protocol is None else job.protocol.name)
+        pip = job.pipette.name() if job.pipette is not None else ""
+        item.setText(1, "" if job.protocol is None else job.protocol.name)
         item.setText(2, pip)
         item.setText(3, status)
-        pipnum = pip[12:] if pip.lower().startswith('patchpipette') else pip
+        pipnum = pip[12:] if pip.lower().startswith("patchpipette") else pip
         statusTxt = self.pipStatusText.get(pip)
         if statusTxt is not None:
-            statusTxt.setText('%s: %s' % (pipnum, status))
+            statusTxt.setText(f"{pipnum}: {status}")
 
     def deviceStatusChanged(self, device, status):
         # todo: implement per-pipette UI
-        print("Device status: %s, %s", (device, status))
+        print(f"Device status: {device}, {status}")
 
     def treeSelectionChanged(self):
         sel = self.ui.pointTree.selectedItems()
@@ -287,25 +287,25 @@ class VoltageImagingModule(Module):
         geom = self.win.geometry()
         config = {
             # 'plateCenter': list(self._plateCenter),
-            # 'window': str(self.win.saveState().toPercentEncoding()), 
-            'geometry': [geom.x(), geom.y(), geom.width(), geom.height()],
+            # 'window': str(self.win.saveState().toPercentEncoding()),
+            "geometry": [geom.x(), geom.y(), geom.width(), geom.height()],
         }
-        configfile = os.path.join('modules', self.name + '.cfg')
+        configfile = os.path.join("modules", self.name + ".cfg")
         man = getManager()
         man.writeConfigFile(config, configfile)
 
     def loadConfig(self):
-        configfile = os.path.join('modules', self.name + '.cfg')
+        configfile = os.path.join("modules", self.name + ".cfg")
         man = getManager()
         config = man.readConfigFile(configfile)
-        if 'geometry' in config:
-            geom = Qt.QRect(*config['geometry'])
+        if "geometry" in config:
+            geom = Qt.QRect(*config["geometry"])
             self.win.setGeometry(geom)
         # if 'window' in config:
         #     ws = Qt.QByteArray.fromPercentEncoding(config['window'])
         #     self.win.restoreState(ws)
         # if 'plateCenter' in config:
-        #     self.setPlateCenter(config['plateCenter'])        
+        #     self.setPlateCenter(config['plateCenter'])
 
     def lockStageBtnToggled(self, v):
         if self._stageLockRequest is not None:
@@ -317,9 +317,9 @@ class VoltageImagingModule(Module):
             # acquire stage lock with higher priority than patch threads
             self._stageLockRequest = self.stageCameraLock.acquire(priority=10)
             self._stageLockRequest.sigFinished.connect(self.stageLockAcquired)
-            self.ui.lockStageBtn.setText('Locking stage...')
+            self.ui.lockStageBtn.setText("Locking stage...")
         else:
-            self.ui.lockStageBtn.setText('Lock stage')
+            self.ui.lockStageBtn.setText("Lock stage")
 
     def stageLockAcquired(self, req):
-        self.ui.lockStageBtn.setText('Stage locked!')
+        self.ui.lockStageBtn.setText("Stage locked!")
