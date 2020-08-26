@@ -87,7 +87,6 @@ class AutopatchModule(Module):
         self.jobQueue = JobQueue(config["patchDevices"], self)
 
         self.threads = []
-        cam = manager.getDevice(config["imagingDevice"])
         for pipName in config["patchDevices"]:
             pip = manager.getDevice(pipName)
             pip.setActive(True)
