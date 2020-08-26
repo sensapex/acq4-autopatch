@@ -17,8 +17,8 @@ from .protocols import allPatchProtocols
 MainForm = Qt.importTemplate(".main_window")
 
 
-class VoltageImagingModule(Module):
-    moduleDisplayName = "Voltage Imaging"
+class AutopatchModule(Module):
+    moduleDisplayName = "Autopatch"
     moduleCategory = "Acquisition"
 
     def __init__(self, manager, name, config):
@@ -122,7 +122,7 @@ class VoltageImagingModule(Module):
             manager = getManager()
             mods = manager.listInterfaces("cameraModule")
             if len(mods) == 0:
-                raise Exception("Camera module required")
+                raise Exception("Open the Camera module first")
             self._cammod = manager.getModule(mods[0])
         return self._cammod
 

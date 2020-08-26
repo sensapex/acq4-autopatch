@@ -1,6 +1,6 @@
 from collections import OrderedDict
 
-from . import recalibrate, test, task_runner
+from . import recalibrate, test, task_runner, mock
 from .patch_protocol import PatchProtocol
 
 
