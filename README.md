@@ -40,7 +40,7 @@ Customize the following and add it to the `modules:` section of your ACQ4 `defau
                     rinseSequence: [(-35e3, 3.0), (65e3, 15.0)]
 ```
 
-# Use
+# Usage
 
 TODO create and then link to video explanation.
 
@@ -53,10 +53,14 @@ Briefly:
    1. Do any other calibration necessary.
 1. For each pipette, open a separate TaskRunner module.
    1. Enable the Clamp associated with this pipette.
-   1. Configure the tasks to perform after a cell is patched.
+   1. Configure the tasks to be performed after a cell is patched.
 1. Open the MultiPatch module. This is useful for monitoring.
 1. Open the Autopatch module.
-   1. Set points for every cell you'd like to patch in each well.
+   1. Press "Add Points" and add one in the Camera for every cell you'd like to patch. Repeat for each well.
+   1. Pick your acquisition protocol.
+   1. Press "Start"
+1. Monitor status in the "Pipettes" pane or in the MultiPatch window.
+1. Read through results or look at errors in the "Results" pane.
 
 # Legal
 
