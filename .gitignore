@@ -1,2 +1,4 @@
 *.pyc
-voltage_imaging.egg-info
+*.egg-info
+build/
+dist/
