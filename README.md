@@ -62,6 +62,14 @@ Briefly:
 1. Monitor status in the "Pipettes" pane or in the MultiPatch window.
 1. Read through results or look at errors in the "Results" pane.
 
-# Legal
+# Licensing
 
-All software copyright (c) 2019-2020 Sensapex. All rights reserved
+All software copyright (c) 2019-2020 Sensapex. All rights reserved. It is offered under multiple different
+licenses, depending on your needs:
+
+ * A commercial license is appropriate for development of proprietary/commercial software where you do not want
+   to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL
+   version 3. To purchase a commercial license, contact office@sensapex.com
+ * Licensed under the GNU Lesser General Public License (LGPL) version 3 is appropriate for the development of
+   open-source applications, provided you can comply with the terms and conditions of the GNU LGPL version 3 (or
+   GNU GPL version 3). See [LGPL-3](LGPL-3) for details.
