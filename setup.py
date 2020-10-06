@@ -15,7 +15,7 @@ setup(
         "Development Status :: 4 - Beta",
         "Environment :: Other Environment",
         "Intended Audience :: Science/Research",
-        "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+        "License :: OSI Approved :: GNU Lesser General Public License v3 (LGPLv3)",
         "Operating System :: OS Independent",
         "Programming Language :: Python :: 3",
         "Programming Language :: Python",
@@ -32,5 +32,5 @@ setup(
     name="acq4_autopatch",
     packages=packages,
     url="https://github.com/sensapex/acq4-autopatch",
-    version="0.0.1",
+    version="0.0.2",
 )
