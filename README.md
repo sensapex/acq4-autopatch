@@ -3,15 +3,19 @@ Automated cell patching extension for ACQ4
 
 # Installation
 
-TODO how are we distributing this?
-
 Install the package into your environment with e.g.
 
+```sh
+pip install acq4_autopatch
 ```
-conda develop acq4_autopatch
+or
+```sh
+git clone https://github.com/sensapex/acq4-autopatch.git
+conda develop acq4-autopatch
 ```
 
-Customize the following and add it to the `modules:` section of your ACQ4 `default.cfg` file:
+Customize the following to suit your hardware and add it to the `modules:` section of your ACQ4 `default.cfg`
+file:
 
 ```yaml
     Autopatch:
@@ -42,8 +46,6 @@ Customize the following and add it to the `modules:` section of your ACQ4 `defau
 
 # Usage
 
-TODO create and then link to video explanation.
-
 Briefly:
 1. Make sure you have an active Storage directory in the DataManager module.
 1. Open the Camera module.
@@ -62,6 +64,8 @@ Briefly:
 1. Monitor status in the "Pipettes" pane or in the MultiPatch window.
 1. Read through results or look at errors in the "Results" pane.
 
+TODO create and then link to video explanation.
+
 # Licensing
 
 All software copyright (c) 2019-2020 Sensapex. All rights reserved. It is offered under multiple different
@@ -69,7 +73,7 @@ licenses, depending on your needs:
 
  * A commercial license is appropriate for development of proprietary/commercial software where you do not want
    to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL
-   version 3. To purchase a commercial license, contact office@sensapex.com
+   version 3. To purchase a commercial license, contact [our sales team](office@sensapex.com).
  * Licensed under the GNU Lesser General Public License (LGPL) version 3 is appropriate for the development of
    open-source applications, provided you can comply with the terms and conditions of the GNU LGPL version 3 (or
    GNU GPL version 3). See [LGPL-3](LGPL-3) for details.
