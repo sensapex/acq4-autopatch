@@ -73,7 +73,7 @@ licenses, depending on your needs:
 
  * A commercial license is appropriate for development of proprietary/commercial software where you do not want
    to share any source code with third parties or otherwise cannot comply with the terms of the GNU LGPL
-   version 3. To purchase a commercial license, contact [our sales team](mailto:office@sensapex.com).
+   version 3. To purchase a commercial license, contact [our sales team](mailto:support@sensapex.com).
  * Licensed under the GNU Lesser General Public License (LGPL) version 3 is appropriate for the development of
    open-source applications, provided you can comply with the terms and conditions of the GNU LGPL version 3 (or
-   GNU GPL version 3). See [LGPL-3](LGPL-3) for details.
+   GNU GPL version 3). See [LGPL-3](https://github.com/sensapex/acq4-autopatch/blob/core/LGPL-3) for details.

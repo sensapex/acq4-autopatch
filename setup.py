@@ -32,5 +32,5 @@ setup(
     name="acq4_autopatch",
     packages=packages,
     url="https://github.com/sensapex/acq4-autopatch",
-    version="0.0.2",
+    version="0.0.3",
 )
