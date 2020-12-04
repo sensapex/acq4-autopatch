@@ -31,6 +31,7 @@ setup(
     license="LGPL-3",
     name="acq4_autopatch",
     packages=packages,
+    package_data={"": ["main_window.ui"]},
     url="https://github.com/sensapex/acq4-autopatch",
-    version="0.0.4",
+    version="0.0.5",
 )
