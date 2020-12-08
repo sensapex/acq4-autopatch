@@ -17,9 +17,6 @@ class TargetMotionPlanner(PipetteMotionPlanner):
         return pip._moveToGlobal(target, speed=speed)
 
 
-Pipette.defaultMotionPlanners["target"] = TargetMotionPlanner
-
-
 class ApproachMotionPlanner(PipetteMotionPlanner):
     """Move directly to approach position
     """
@@ -32,4 +29,6 @@ class ApproachMotionPlanner(PipetteMotionPlanner):
         return pip._moveToGlobal(target, speed=speed)
 
 
-Pipette.defaultMotionPlanners["approach"] = ApproachMotionPlanner
+def assumeInvertedObjectiveInMotionPlanning():
+    Pipette.defaultMotionPlanners["target"] = TargetMotionPlanner
+    Pipette.defaultMotionPlanners["approach"] = ApproachMotionPlanner
