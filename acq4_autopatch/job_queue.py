@@ -54,7 +54,8 @@ class JobQueue(object):
             # TODO the selection of job must account for safe distances between pipette tips
 
             positions = np.array([job.position[:2] for job in self.queued_jobs])
-            center = np.mean(positions, axis=0)
+            all_positions = np.array([job.position[:2] for job in self.all_jobs])
+            center = np.mean(all_positions, axis=0)
 
             diff = positions - center
             angles = np.arctan2(diff[:, 1], diff[:, 0])
