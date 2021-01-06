@@ -14,7 +14,7 @@ class JobQueue(object):
         self.protocol = None
         self.all_jobs = []
         self.queued_jobs = []
-        self.center = module.plate_center()
+        self.center = module.plate_center
         self.enabled = False
         self.positions = np.empty((0, 3))
         self.lock = Mutex(recursive=True)
