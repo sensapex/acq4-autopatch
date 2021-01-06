@@ -67,7 +67,7 @@ class JobQueue(object):
                 slice_mask = (angles < upper) & (angles > lower)
             dist = (diff ** 2).sum(axis=1) ** 0.5
             dist[~slice_mask] = np.inf
-            closest = int(np.argmin(dist))
+            closest = int(np.argmin(dist))  # closest to the center
             if dist[closest] == np.inf:
                 return None
 
