@@ -1,6 +1,7 @@
 from __future__ import print_function, division
 
 import os
+import numpy as np
 
 import pyqtgraph as pg
 from acq4.Manager import getManager
@@ -18,7 +19,7 @@ MainForm = Qt.importTemplate(".main_window")
 
 
 def _calculate_pipette_boundaries(patch_devices):
-    pipettes = [man.getDevice(pipName).pipetteDevice for pipName in patch_devices]
+    pipettes = [pp.pipetteDevice for pp in patch_devices]
     homes = np.array([pip.parentDevice().homeLocation()[:2] for pip in pipettes])
     ordered_indexes, ordered_homes = zip(
         *sorted(enumerate(homes), key=lambda val: np.arctan2(val[1][1], val[1][0]))
@@ -102,9 +103,9 @@ class AutopatchModule(Module):
         self.job_queue = JobQueue(config["patchDevices"], self)
 
         self.threads = []
-        self.boundaries_by_pipette = _calculate_pipette_boundaries(config["patchDevices"])
-        for pip_name in config["patchDevices"]:
-            pip = manager.getDevice(pip_name)
+        patch_devices = [self.man.getDevice(pipName) for pipName in config["patchDevices"]]
+        self.boundaries_by_pipette = _calculate_pipette_boundaries(patch_devices)
+        for pip in patch_devices:
             pip.setActive(True)
 
             # Write state config parameters to pipette state manager.

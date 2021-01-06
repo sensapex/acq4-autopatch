@@ -55,6 +55,8 @@ class JobQueue(object):
                 return None
 
             boundaries = self.module.boundaries_by_pipette[patch_pipette.pipetteDevice]
+            lower = _z2polar(boundaries[0])
+            upper = _z2polar(boundaries[1])
             # TODO consider the degenerate case: only one pipette
             # TODO consider the semi-degenerate case: only two pipettes
             # TODO the center of the jobs maybe needs to account for all currenttly active jobs
@@ -73,10 +75,11 @@ class JobQueue(object):
             # cell_quads = positions[:, :2] > quad_center
             # quad_mask = (cell_quads == pip_quad[None, :]).all(axis=1)
 
-            positions = np.array([_z2polar(job.position) for job in self.queued_jobs])
+            positions = np.array([job.position for job in self.queued_jobs])
+            center = np.mean(positions, axis=0)
 
             # find closest cell to this pipette, excluding other slices
-            diff = positions - np.array(pos).reshape(1, 3)
+            diff = positions - np.array(center).reshape(1, 3)
             dist = (diff ** 2).sum(axis=1) ** 0.5
             # dist[~quad_mask] = np.inf
             closest = np.argmin(dist)
