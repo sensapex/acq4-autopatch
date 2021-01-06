@@ -87,6 +87,7 @@ class AutopatchModule(Module):
         self.job_queue = JobQueue(config["patchDevices"], self)
 
         self.threads = []
+        self.boundary_points = self._calculate_pipette_boundaries(config["patchDevices"])
         for pip_name in config["patchDevices"]:
             pip = manager.getDevice(pip_name)
             pip.setActive(True)
@@ -104,6 +105,21 @@ class AutopatchModule(Module):
 
         self.load_config()
         self.protocol_combo_changed()
+
+    def _calculate_pipette_boundaries(self, patch_devices):
+        pipettes = [man.getDevice(pipName).pipetteDevice for pipName in patch_devices]
+        homes = np.array([pip.parentDevice().homeLocation()[:2] for pip in pipettes])
+        ordered_indexes, ordered_homes = zip(
+            *sorted(enumerate(homes), key=lambda val: np.arctan2(val[1][1], val[1][0]))
+        )
+
+        def boundaries_for_index(i: int):
+            return (
+                np.mean((ordered_homes[i], ordered_homes[(i + 1) % len(homes)]), axis=0),
+                np.mean((ordered_homes[i], ordered_homes[(i - 1) % len(homes)]), axis=0),
+            )
+
+        return {pipettes[orig_i]: boundaries_for_index(i) for i, orig_i in enumerate(ordered_indexes)}
 
     def window(self):
         return self.win
