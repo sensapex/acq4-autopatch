@@ -19,23 +19,23 @@ class JobQueue(object):
         self.positions = np.empty((0, 3))
         self.lock = Mutex(recursive=True)
 
-    def setProtocol(self, prot):
+    def set_protocol(self, prot):
         self.protocol = prot
-        self.setJobs(self.all_jobs)
+        self.set_jobs(self.all_jobs)
 
-    def setEnabled(self, en):
+    def set_enabled(self, en):
         """If enabled, then requestJob() will attempt to return the next available job.
         If disabled, then requestJob() will return None.
         """
         self.enabled = en
 
-    def setJobs(self, jobs):
+    def set_jobs(self, jobs):
         with self.lock:
             # queue up all jobs that have not run this protocol yet
             self.all_jobs = jobs
             self.queued_jobs = [j for j in jobs if self.protocol.name not in j.assigned_protocols]
 
-    def requestJob(self, pipette):
+    def request_job(self, patch_pipette):
         # Simple implementation: return the job nearest to the current pipette position.
         # Only jobs in the same quadrant as the pipette are considered.
 
@@ -69,6 +69,6 @@ class JobQueue(object):
                 return None
 
             job = self.queued_jobs.pop(closest)
-            job.setProtocol(self.protocol)
-            job.assignPipette(pipette)
+            job.set_protocol(self.protocol)
+            job.assignPipette(patch_pipette)
             return job

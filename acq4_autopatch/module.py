@@ -71,10 +71,10 @@ class AutopatchModule(Module):
         for line in self.plate_center_lines:
             cam_mod.window().addItem(line)
         radius = 5e-3
-        self.wellCircles = [
+        self.well_circles = [
             Qt.QGraphicsEllipseItem(x - radius, y - radius, radius * 2, radius * 2) for x, y in config["wellPositions"]
         ]
-        for wc in self.wellCircles:
+        for wc in self.well_circles:
             wc.setPen(pg.mkPen("y"))
             cam_mod.window().addItem(wc)
 
@@ -158,7 +158,7 @@ class AutopatchModule(Module):
 
     def protocol_combo_changed(self):
         prot = str(self.ui.protocolCombo.currentText())
-        self.job_queue.setProtocol(all_patch_protocols()[prot])
+        self.job_queue.set_protocol(all_patch_protocols()[prot])
 
     def camera_module_clicked(self, ev):
         if ev.button() != Qt.Qt.LeftButton:
@@ -197,7 +197,7 @@ class AutopatchModule(Module):
         item.patchAttempt = pa
         self.patch_attempts.append(pa)
 
-        self.job_queue.setJobs(self.patch_attempts)
+        self.job_queue.set_jobs(self.patch_attempts)
 
         pa.statusChanged.connect(self.job_status_changed)
 
@@ -219,7 +219,7 @@ class AutopatchModule(Module):
 
         pa.targetItem.scene().removeItem(pa.targetItem)
 
-        self.job_queue.setJobs(self.patch_attempts)
+        self.job_queue.set_jobs(self.patch_attempts)
 
     def camera_transform_changed(self):
         cam = self.get_camera_device()
@@ -232,11 +232,11 @@ class AutopatchModule(Module):
         if self.ui.startBtn.isChecked():
             self.ui.startBtn.setText("Stop")
             self.ui.addPointsBtn.setChecked(False)
-            self.job_queue.setJobs(self.patch_attempts)
-            self.job_queue.setEnabled(True)
+            self.job_queue.set_jobs(self.patch_attempts)
+            self.job_queue.set_enabled(True)
         else:
             self.ui.startBtn.setText("Start")
-            self.job_queue.setEnabled(False)
+            self.job_queue.set_enabled(False)
 
     def abort_clicked(self):
         """Stop all running jobs.
@@ -253,7 +253,7 @@ class AutopatchModule(Module):
         """
         for pa in self.patch_attempts:
             pa.reset()
-        self.job_queue.setJobs(self.patch_attempts)
+        self.job_queue.set_jobs(self.patch_attempts)
 
     def close_event(self, ev):
         self.quit()
@@ -266,7 +266,7 @@ class AutopatchModule(Module):
             thread.stop()
         for pa in self.patch_attempts[:]:
             self.remove_patch_attempt(pa)
-        for item in self.plate_center_lines + self.wellCircles:
+        for item in self.plate_center_lines + self.well_circles:
             scene = item.scene()
             if scene is not None:
                 scene.removeItem(item)

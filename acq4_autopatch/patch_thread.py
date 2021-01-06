@@ -41,7 +41,7 @@ class PatchThread(Thread):
                 time.sleep(0.5)
                 continue
 
-            pa = self.jobQueue.requestJob(self.dev)
+            pa = self.jobQueue.request_job(self.dev)
             self._currentPatchAttempt = pa
             if pa is None:
                 # no jobs right now; sleep and try again.
