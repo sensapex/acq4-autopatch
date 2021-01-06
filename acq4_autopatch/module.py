@@ -103,7 +103,8 @@ class AutopatchModule(Module):
         self.job_queue = JobQueue(config["patchDevices"], self)
 
         self.threads = []
-        patch_devices = [self.man.getDevice(pipName) for pipName in config["patchDevices"]]
+        man = getManager()
+        patch_devices = [man.getDevice(pipName) for pipName in config["patchDevices"]]
         self.boundaries_by_pipette = _calculate_pipette_boundaries(patch_devices)
         for pip in patch_devices:
             pip.setActive(True)
