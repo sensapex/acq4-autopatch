@@ -2,14 +2,6 @@ import numpy as np
 from acq4.util.Mutex import Mutex
 
 
-def _polar2z(r, theta):
-    return r * np.exp(1j * theta)
-
-
-def _z2polar(z):
-    return (np.abs(z), np.angle(z))
-
-
 class JobQueue(object):
     """Stores a list of jobs and assigns them by request.
 
@@ -55,34 +47,27 @@ class JobQueue(object):
                 return None
 
             boundaries = self.module.boundaries_by_pipette[patch_pipette.pipetteDevice]
-            lower = _z2polar(boundaries[0])
-            upper = _z2polar(boundaries[1])
-            # TODO consider the degenerate case: only one pipette
-            # TODO consider the semi-degenerate case: only two pipettes
-            # TODO the center of the jobs maybe needs to account for all currenttly active jobs
+            lower = np.arctan2(*boundaries[0][::-1])
+            upper = np.arctan2(*boundaries[1][::-1])
 
-            # # current pipette position
-            # pos = np.array(patch_pipette.pipetteDevice.globalPosition())
-            #
-            # # all job positions
-            # positions = np.array([job.position for job in self.queued_jobs])
-            #
-            # # which quadrant does this pipette belong in?
-            # pip_quad = np.array(self.pipettes[patch_pipette.name()]).astype(bool)
-            #
-            # # mask cells that are not in the same quadrant
-            # quad_center = np.array(self.center[:2])
-            # cell_quads = positions[:, :2] > quad_center
-            # quad_mask = (cell_quads == pip_quad[None, :]).all(axis=1)
+            # TODO the center of the jobs maybe needs to account for all currently active jobs
+            # TODO the selection of job must account for safe distances between pipette tips
 
-            positions = np.array([job.position for job in self.queued_jobs])
+            positions = np.array([job.position[:2] for job in self.queued_jobs])
             center = np.mean(positions, axis=0)
 
-            # find closest cell to this pipette, excluding other slices
-            diff = positions - np.array(center).reshape(1, 3)
+            diff = positions - center
+            angles = np.arctan2(diff[:, 1], diff[:, 0])
+            if lower > upper:
+                slice_mask = (angles > upper) & (angles < lower)
+            elif lower == upper:
+                # This implies we have only one pipette
+                slice_mask = np.ones(positions.shape[0]).astype(bool)
+            else:
+                slice_mask = (angles < upper) & (angles > lower)
             dist = (diff ** 2).sum(axis=1) ** 0.5
-            # dist[~quad_mask] = np.inf
-            closest = np.argmin(dist)
+            dist[~slice_mask] = np.inf
+            closest = int(np.argmin(dist))
             if dist[closest] == np.inf:
                 return None
 
