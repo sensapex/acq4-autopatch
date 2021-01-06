@@ -20,7 +20,7 @@ MainForm = Qt.importTemplate(".main_window")
 
 def _calculate_pipette_boundaries(patch_devices):
     pipettes = [pp.pipetteDevice for pp in patch_devices]
-    homes = np.array([pip.parentDevice().homeLocation()[:2] for pip in pipettes])
+    homes = np.array([pip.parentDevice().homePosition()[:2] for pip in pipettes])
     ordered_indexes, ordered_homes = zip(
         *sorted(enumerate(homes), key=lambda val: np.arctan2(val[1][1], val[1][0]))
     )
