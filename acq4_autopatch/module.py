@@ -17,6 +17,22 @@ from .protocols import all_patch_protocols
 MainForm = Qt.importTemplate(".main_window")
 
 
+def _calculate_pipette_boundaries(patch_devices):
+    pipettes = [man.getDevice(pipName).pipetteDevice for pipName in patch_devices]
+    homes = np.array([pip.parentDevice().homeLocation()[:2] for pip in pipettes])
+    ordered_indexes, ordered_homes = zip(
+        *sorted(enumerate(homes), key=lambda val: np.arctan2(val[1][1], val[1][0]))
+    )
+
+    def boundaries_for_index(i: int):
+        return (
+            np.mean((ordered_homes[i], ordered_homes[(i + 1) % len(homes)]), axis=0),
+            np.mean((ordered_homes[i], ordered_homes[(i - 1) % len(homes)]), axis=0),
+        )
+
+    return {pipettes[orig_i]: boundaries_for_index(i) for i, orig_i in enumerate(ordered_indexes)}
+
+
 class AutopatchModule(Module):
     moduleDisplayName = "Autopatch"
     moduleCategory = "Acquisition"
@@ -30,7 +46,7 @@ class AutopatchModule(Module):
         self._cammod = None
         self._camdev = None
         self._next_point_id = 0
-        self._plate_center = config.get("plateCenter", (0, 0, 0))
+        self.plate_center = config.get("plateCenter", (0, 0, 0))
 
         Module.__init__(self, manager, name, config)
 
@@ -63,10 +79,9 @@ class AutopatchModule(Module):
 
         cam_mod = self.get_camera_module()
 
-        pc = self.plate_center()
         self.plate_center_lines = [
-            pg.InfiniteLine(pos=pc[:2], angle=0, movable=False),
-            pg.InfiniteLine(pos=pc[:2], angle=90, movable=False),
+            pg.InfiniteLine(pos=self.plate_center[:2], angle=0, movable=False),
+            pg.InfiniteLine(pos=self.plate_center[:2], angle=90, movable=False),
         ]
         for line in self.plate_center_lines:
             cam_mod.window().addItem(line)
@@ -87,7 +102,7 @@ class AutopatchModule(Module):
         self.job_queue = JobQueue(config["patchDevices"], self)
 
         self.threads = []
-        self.boundary_points = self._calculate_pipette_boundaries(config["patchDevices"])
+        self.boundaries_by_pipette = _calculate_pipette_boundaries(config["patchDevices"])
         for pip_name in config["patchDevices"]:
             pip = manager.getDevice(pip_name)
             pip.setActive(True)
@@ -105,21 +120,6 @@ class AutopatchModule(Module):
 
         self.load_config()
         self.protocol_combo_changed()
-
-    def _calculate_pipette_boundaries(self, patch_devices):
-        pipettes = [man.getDevice(pipName).pipetteDevice for pipName in patch_devices]
-        homes = np.array([pip.parentDevice().homeLocation()[:2] for pip in pipettes])
-        ordered_indexes, ordered_homes = zip(
-            *sorted(enumerate(homes), key=lambda val: np.arctan2(val[1][1], val[1][0]))
-        )
-
-        def boundaries_for_index(i: int):
-            return (
-                np.mean((ordered_homes[i], ordered_homes[(i + 1) % len(homes)]), axis=0),
-                np.mean((ordered_homes[i], ordered_homes[(i - 1) % len(homes)]), axis=0),
-            )
-
-        return {pipettes[orig_i]: boundaries_for_index(i) for i, orig_i in enumerate(ordered_indexes)}
 
     def window(self):
         return self.win
@@ -199,7 +199,7 @@ class AutopatchModule(Module):
 
         self.job_queue.set_jobs(self.patch_attempts)
 
-        pa.statusChanged.connect(self.job_status_changed)
+        pa.status_changed.connect(self.job_status_changed)
 
         return pa
 
@@ -214,10 +214,10 @@ class AutopatchModule(Module):
     def remove_patch_attempt(self, pa):
         self.patch_attempts.remove(pa)
 
-        index = self.ui.pointTree.indexOfTopLevelItem(pa.treeItem)
+        index = self.ui.pointTree.indexOfTopLevelItem(pa.tree_item)
         self.ui.pointTree.takeTopLevelItem(index)
 
-        pa.targetItem.scene().removeItem(pa.targetItem)
+        pa.target_item.scene().removeItem(pa.target_item)
 
         self.job_queue.set_jobs(self.patch_attempts)
 
@@ -226,7 +226,7 @@ class AutopatchModule(Module):
         fdepth = cam.mapToGlobal([0, 0, 0])[2]
 
         for pa in self.patch_attempts:
-            pa.targetItem.setFocusDepth(fdepth)
+            pa.target_item.setFocusDepth(fdepth)
 
     def start_btn_toggled(self):
         if self.ui.startBtn.isChecked():
@@ -274,7 +274,7 @@ class AutopatchModule(Module):
         return Module.quit(self)
 
     def job_status_changed(self, job, status):
-        item = job.treeItem
+        item = job.tree_item
         pip = job.pipette.name() if job.pipette is not None else ""
         item.setText(1, "" if job.protocol is None else job.protocol.name)
         item.setText(2, pip)
@@ -292,11 +292,8 @@ class AutopatchModule(Module):
         sel = self.ui.pointTree.selectedItems()
         if len(sel) == 1:
             # TODO: something more user-friendly; this is just for development
-            log = sel[0].patchAttempt.formatLog()
+            log = sel[0].patchAttempt.format_log()
             self.ui.resultText.setPlainText(log)
-
-    def plate_center(self):
-        return self._plate_center
 
     def save_config(self):
         geom = self.win.geometry()

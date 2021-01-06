@@ -41,34 +41,34 @@ class RecalibrateProtocol(PatchProtocol):
         self.wait([fut])
 
         # move to 100 um above target z value
-        pos = pa.pipetteTargetPosition()
+        pos = pa.pipette_target_position()
         pos[2] += 100e-6
         fut = self.dev.pipetteDevice._moveToGlobal(pos, "fast")
         self.wait([fut])
 
         # set pipette target position
-        self.dev.pipetteDevice.setTarget(pa.pipetteTargetPosition())
+        self.dev.pipetteDevice.setTarget(pa.pipette_target_position())
 
         # move pipette to 10 um above corrected target
-        pipPos = pa.pipetteTargetPosition() + np.array([0, 0, calibrationHeight])
+        pipPos = pa.pipette_target_position() + np.array([0, 0, calibrationHeight])
         # don't use target move here; we don't need all the obstacle avoidance.
         # fut = self.dev.pipetteDevice.goTarget(speed='fast')
         pfut = self.dev.pipetteDevice._moveToGlobal(pipPos, speed="slow")
 
         with self.stageCameraLock.acquire() as fut:
-            pa.setStatus("Waiting for stage/camera")
+            pa.set_status("Waiting for stage/camera")
             self.wait([fut], timeout=None)
 
             # move stage/focus above actual target
-            camPos = pa.globalTargetPosition() + np.array([0, 0, calibrationHeight])
+            camPos = pa.global_target_position() + np.array([0, 0, calibrationHeight])
             cfut = self.camera.moveCenterToGlobal(camPos, "fast")
             self.wait([pfut, cfut], timeout=None)
 
             # Offset from target to where pipette actually landed
             try:
-                self.patchAttempt.pipetteError = self.getPipetteError()
+                self.patchAttempt.pipette_error = self.getPipetteError()
             except RuntimeError:
-                self.patchAttempt.pipetteError = np.array([np.nan] * 3)
+                self.patchAttempt.pipette_error = np.array([np.nan] * 3)
                 raise
 
     def getPipetteError(self):
@@ -90,14 +90,14 @@ class AutoRecalibrateProtocol(RecalibrateProtocol):
         Error vector may contain NaN to indicate that the correction failed and this target should not be attempted.
         """
         pa = self.patchAttempt
-        pa.setStatus("Measuring pipette error")
+        pa.set_status("Measuring pipette error")
 
         perfVals = []
         pipetteDiffVals = []
         targetErrVals = []
         focusErrVals = []
 
-        targetPos = np.array(pa.pipetteTargetPosition())
+        targetPos = np.array(pa.pipette_target_position())
 
         # Make a few attempts to optimize pipette position. Iterate until
         #  - z is in focus on the pipette tip
@@ -146,7 +146,7 @@ class AutoRecalibrateProtocol(RecalibrateProtocol):
                 # wait for requested moves to complete and try again
                 self.wait(futs)
                 time.sleep(0.3)  # wait for positions to catch up.. we can remove this after bug fixed!
-                pa.setStatus(f"Measuring pipette error: adjust and iterate  ({i:d})")
+                pa.set_status(f"Measuring pipette error: adjust and iterate  ({i:d})")
             else:
                 # no moves needed this round; we are done.
                 break
@@ -157,7 +157,7 @@ class AutoRecalibrateProtocol(RecalibrateProtocol):
                 f"Measuring pipette error: failed  (focus error: {focusErrVals}  target error: {targetErrVals}  correlation: {perfVals})"
             )
 
-        pa.setStatus(f"Measuring pipette error: success {pipetteDiff}")
+        pa.set_status(f"Measuring pipette error: success {pipetteDiff}")
         return pipetteDiff
 
     def showErrorLine(self, pt1, pt2):
@@ -196,7 +196,7 @@ class ManualRecalibrateProtocol(RecalibrateProtocol):
 
     def getPipetteError(self):
         pa = self.patchAttempt
-        pa.setStatus("Waiting for user click")
+        pa.set_status("Waiting for user click")
         clickPos = self.getClickPosition()
         pos = np.array(self.dev.pipetteDevice.globalPosition())
         return clickPos - pos

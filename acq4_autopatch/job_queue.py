@@ -70,5 +70,5 @@ class JobQueue(object):
 
             job = self.queued_jobs.pop(closest)
             job.set_protocol(self.protocol)
-            job.assignPipette(patch_pipette)
+            job.assign_pipette(patch_pipette)
             return job

@@ -34,7 +34,7 @@ class TaskRunnerPatchProtocol(PatchProtocol):
 
         man = getManager()
         self.dh = man.getCurrentDir().mkdir(f"patch_attempt_{self.patchAttempt.pid:04d}", autoIncrement=True)
-        patchAttempt.setLogFile(self.dh["patch.log"])
+        patchAttempt.set_log_file(self.dh["patch.log"])
 
         self.stateQueue = queue.Queue()
         # this code is running in a thread, so it is necessary to specify that
@@ -61,13 +61,13 @@ class TaskRunnerPatchProtocol(PatchProtocol):
                 raise Exception(f"Failed to reach whole cell state (ended at {finalState}).")
 
             with self.stageCameraLock.acquire() as fut:
-                pa.setStatus("Waiting for stage/camera")
+                pa.set_status("Waiting for stage/camera")
                 self.wait([fut], timeout=None)
                 self.configureCamera()
                 self.runProtocol(pa)
 
         except:
-            pa.setError(sys.exc_info())
+            pa.set_error(sys.exc_info())
         finally:
             if self.dev.broken:
                 self.swapPipette()
@@ -78,11 +78,11 @@ class TaskRunnerPatchProtocol(PatchProtocol):
         pa = self.patchAttempt
 
         # Set target cell position, taking error correction into account
-        targetPos = pa.pipetteTargetPosition()
+        targetPos = pa.pipette_target_position()
         if not np.all(np.isfinite(targetPos)):
             raise Exception("No valid target position for this attempt (probably automatic recalibration failed)")
 
-        pa.setStatus("moving to target")
+        pa.set_status("moving to target")
         self.dev.pipetteDevice.setTarget(targetPos)
 
         # move to 100 um above cell, fast
@@ -100,7 +100,7 @@ class TaskRunnerPatchProtocol(PatchProtocol):
         self.clearStateQueue()
 
         # kick off cell detection; wait until patched or failed
-        pa.setStatus("cell patching")
+        pa.set_status("cell patching")
         self.dev.setState("cell detect")
         while True:
             self.checkStop()
@@ -112,7 +112,7 @@ class TaskRunnerPatchProtocol(PatchProtocol):
             if state.stateName in ("whole cell", "fouled", "broken"):
                 return
             else:
-                pa.setStatus(f"cell patching: {state.stateName}")
+                pa.set_status(f"cell patching: {state.stateName}")
 
             while True:
                 try:
@@ -134,8 +134,8 @@ class TaskRunnerPatchProtocol(PatchProtocol):
         """Cell is patched; lock the stage and begin protocol.
         """
         # focus camera on cell
-        pa.setStatus("focus on cell")
-        self.camera.moveCenterToGlobal(pa.globalTargetPosition(), speed="fast", center="roi").wait()
+        pa.set_status("focus on cell")
+        self.camera.moveCenterToGlobal(pa.global_target_position(), speed="fast", center="roi").wait()
 
         man = getManager()
         # turret = man.getDevice("FilterTurret")
@@ -148,11 +148,11 @@ class TaskRunnerPatchProtocol(PatchProtocol):
         # illum.SetRLIllumination(1)
 
         # take a picture
-        pa.setStatus("say cheese!")
+        pa.set_status("say cheese!")
         frame = self.camera.acquireFrames(n=1, stack=False)
         frame.saveImage(self.dh, "patch_image.tif")
 
-        pa.setStatus("running whole cell protocol")
+        pa.set_status("running whole cell protocol")
 
         # switch to RL
         # turret.setPosition(0).wait()
@@ -214,11 +214,11 @@ class TaskRunnerPatchProtocol(PatchProtocol):
 
             self.camera.setParams(cameraParams)  # , autoRestart=True, autoCorrect=True)
 
-            pa.setStatus("restart acquire video of camera")
+            pa.set_status("restart acquire video of camera")
             self.camera.start()
 
         time.sleep(2)
-        pa.setStatus("whole cell protocol complete")
+        pa.set_status("whole cell protocol complete")
 
     def configureCamera(self):
         """Set camera exposure/trigger channels for this pipette's DAQ.
@@ -232,7 +232,7 @@ class TaskRunnerPatchProtocol(PatchProtocol):
 
     def cleanPipette(self):
         pa = self.patchAttempt
-        pa.setStatus("cleaning pipette")
+        pa.set_status("cleaning pipette")
         self.clearStateQueue()
         fut = self.dev.setState("clean")
 
@@ -241,7 +241,7 @@ class TaskRunnerPatchProtocol(PatchProtocol):
 
     def swapPipette(self):
         pa = self.patchAttempt
-        pa.setStatus("requesting new pipette")
+        pa.set_status("requesting new pipette")
         self.dev.setState("out")
         self.dev.goHome("fast")
         self.dev.requestNewPipette()

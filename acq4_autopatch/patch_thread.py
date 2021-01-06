@@ -50,19 +50,19 @@ class PatchThread(Thread):
                 continue
 
             try:
-                pa.startLogging()
-                pa.setStatus(f"start patch protocol: {pa.protocol.name}")
+                pa.start_logging()
+                pa.set_status(f"start patch protocol: {pa.protocol.name}")
                 protocol = pa.protocol(self, pa)
                 protocol.runPatchProtocol()
                 if pa.error is None:
-                    pa.setStatus("success")
+                    pa.set_status("success")
                 else:
-                    pa.setStatus(f"failed: {str(pa.error[1])}")
+                    pa.set_status(f"failed: {str(pa.error[1])}")
             except self.Stopped:
                 protocol.abortPatchProtocol()
-                pa.setStatus("aborted")
+                pa.set_status("aborted")
                 return
             except Exception as exc:
-                pa.setError(sys.exc_info())
+                pa.set_error(sys.exc_info())
             finally:
-                pa.stopLogging()
+                pa.stop_logging()

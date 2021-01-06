@@ -120,7 +120,7 @@ class TestPatchProtocol(PatchProtocol):
 
     def _runPatchProtocol(self):
         pa = self.patchAttempt
-        pa.setStatus("moving to target")
+        pa.set_status("moving to target")
 
         # move to 100 um above current position
         pos = self.dev.pipetteDevice.globalPosition()
@@ -129,28 +129,28 @@ class TestPatchProtocol(PatchProtocol):
         self.wait([fut])
 
         # move to 100 um above target z value
-        pos = pa.pipetteTargetPosition()
+        pos = pa.pipette_target_position()
         pos[2] += 100e-6
         fut = self.dev.pipetteDevice._moveToGlobal(pos, "fast")
         self.wait([fut])
 
-        self.dev.pipetteDevice.setTarget(pa.pipetteTargetPosition())
+        self.dev.pipetteDevice.setTarget(pa.pipette_target_position())
 
         # move to 10 um above cell
-        pipPos = np.array(pa.pipetteTargetPosition()) + np.array([0, 0, 10e-6])
+        pipPos = np.array(pa.pipette_target_position()) + np.array([0, 0, 10e-6])
         # don't use target move here; we don't need all the obstacle avoidance.
         # fut = self.dev.pipetteDevice.goTarget(speed='fast')
         pfut = self.dev.pipetteDevice._moveToGlobal(pipPos, speed="slow")
 
         with self.stageCameraLock.acquire() as fut:
-            pa.setStatus("Waiting for stage/camera")
+            pa.set_status("Waiting for stage/camera")
             self.wait([fut], timeout=None)
             # Move to actual target, wait for click
-            camPos = pa.globalTargetPosition()
+            camPos = pa.global_target_position()
             cfut = self.camera.moveCenterToGlobal(camPos, "fast")
             self.wait([pfut, cfut], timeout=None)
 
-            pa.setStatus("Waiting click on target")
+            pa.set_status("Waiting click on target")
             targetClickPos = self.getClickPosition()
             stageErr = targetClickPos - camPos
 
@@ -158,7 +158,7 @@ class TestPatchProtocol(PatchProtocol):
             cfut = self.camera.moveCenterToGlobal(pipPos, "slow")
             self.wait([cfut], timeout=None)
 
-            pa.setStatus("Waiting click on pipette")
+            pa.set_status("Waiting click on pipette")
             pipClickPos = self.getClickPosition()
             pipetteErr = pipClickPos - (targetClickPos + np.array([0, 0, 10e-6]))
 
