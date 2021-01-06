@@ -19,7 +19,7 @@ class PatchThread(Thread):
     def __init__(self, dev, module):
         Thread.__init__(self, name=f"VoltageImaging_PatchThread_{dev.name()}")
         self.dev = dev
-        self.jobQueue = module.jobQueue
+        self.jobQueue = module.job_queue
         self.module = module
         self._stop = False
 

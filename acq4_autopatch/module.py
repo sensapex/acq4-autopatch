@@ -12,7 +12,7 @@ from acq4.util.target import Target
 from .job_queue import JobQueue
 from .patch_attempt import PatchAttempt
 from .patch_thread import PatchThread
-from .protocols import allPatchProtocols
+from .protocols import all_patch_protocols
 
 MainForm = Qt.importTemplate(".main_window")
 
@@ -23,24 +23,24 @@ class AutopatchModule(Module):
 
     def __init__(self, manager, name, config):
         # lock used to serialize access to shared stage/camera hardware
-        self.stageCameraLock = PriorityLock()
-        self._stageLockRequest = None
+        self.stage_camera_lock = PriorityLock()
+        self._stage_lock_request = None
 
-        self.patchAttempts = []
+        self.patch_attempts = []
         self._cammod = None
         self._camdev = None
-        self._nextPointID = 0
-        self._plateCenter = config.get("plateCenter", (0, 0, 0))
+        self._next_point_id = 0
+        self._plate_center = config.get("plateCenter", (0, 0, 0))
 
         Module.__init__(self, manager, name, config)
 
         self.win = Qt.QWidget()
         self.win.resize(1600, 900)
-        self.win.closeEvent = self.closeEvent
+        self.win.closeEvent = self.close_event
         self.ui = MainForm()
         self.ui.setupUi(self.win)
 
-        for protocol in allPatchProtocols():
+        for protocol in all_patch_protocols():
             self.ui.protocolCombo.addItem(protocol)
 
         for i, w in enumerate([40, 130, 100, 400]):
@@ -48,75 +48,75 @@ class AutopatchModule(Module):
 
         # hard-code pipette name => status text box assignments
         # we'd have to rewrite this if we move beyond 4 pipettes or want to rename them..
-        self.pipStatusText = {f"PatchPipette{i:d}": getattr(self.ui, f"pip{i:d}Status") for i in range(1, 5)}
+        self.pip_status_text = {f"PatchPipette{i:d}": getattr(self.ui, f"pip{i:d}Status") for i in range(1, 5)}
 
         self.win.show()
 
-        self.ui.addPointsBtn.toggled.connect(self.addPointsToggled)
-        self.ui.removePointsBtn.clicked.connect(self.removePointsClicked)
-        self.ui.startBtn.toggled.connect(self.startBtnToggled)
-        self.ui.abortBtn.clicked.connect(self.abortClicked)
-        self.ui.resetBtn.clicked.connect(self.resetClicked)
-        self.ui.pointTree.itemSelectionChanged.connect(self.treeSelectionChanged)
-        self.ui.protocolCombo.currentIndexChanged.connect(self.protocolComboChanged)
-        self.ui.lockStageBtn.toggled.connect(self.lockStageBtnToggled)
+        self.ui.addPointsBtn.toggled.connect(self.add_points_toggled)
+        self.ui.removePointsBtn.clicked.connect(self.remove_points_clicked)
+        self.ui.startBtn.toggled.connect(self.start_btn_toggled)
+        self.ui.abortBtn.clicked.connect(self.abort_clicked)
+        self.ui.resetBtn.clicked.connect(self.reset_clicked)
+        self.ui.pointTree.itemSelectionChanged.connect(self.tree_selection_changed)
+        self.ui.protocolCombo.currentIndexChanged.connect(self.protocol_combo_changed)
+        self.ui.lockStageBtn.toggled.connect(self.lock_stage_btn_toggled)
 
-        camMod = self.getCameraModule()
+        cam_mod = self.get_camera_module()
 
-        pc = self.plateCenter()
-        self.plateCenterLines = [
+        pc = self.plate_center()
+        self.plate_center_lines = [
             pg.InfiniteLine(pos=pc[:2], angle=0, movable=False),
             pg.InfiniteLine(pos=pc[:2], angle=90, movable=False),
         ]
-        for line in self.plateCenterLines:
-            camMod.window().addItem(line)
+        for line in self.plate_center_lines:
+            cam_mod.window().addItem(line)
         radius = 5e-3
         self.wellCircles = [
             Qt.QGraphicsEllipseItem(x - radius, y - radius, radius * 2, radius * 2) for x, y in config["wellPositions"]
         ]
         for wc in self.wellCircles:
             wc.setPen(pg.mkPen("y"))
-            camMod.window().addItem(wc)
+            cam_mod.window().addItem(wc)
 
-        cam = self.getCameraDevice()
-        cam.sigGlobalTransformChanged.connect(self.cameraTransformChanged)
+        cam = self.get_camera_device()
+        cam.sigGlobalTransformChanged.connect(self.camera_transform_changed)
 
         # allow to disable safe move in config
-        self.safeMoveEnabled = config.get("safeMove", True)
+        self.safe_move_enabled = config.get("safeMove", True)
 
-        self.jobQueue = JobQueue(config["patchDevices"], self)
+        self.job_queue = JobQueue(config["patchDevices"], self)
 
         self.threads = []
-        for pipName in config["patchDevices"]:
-            pip = manager.getDevice(pipName)
+        for pip_name in config["patchDevices"]:
+            pip = manager.getDevice(pip_name)
             pip.setActive(True)
 
             # Write state config parameters to pipette state manager.
             # This does not play nicely with others; perhaps we should have our own state manager.
-            stateConfig = pip.stateManager().stateConfig
+            state_config = pip.stateManager().stateConfig
             for k, v in config.get("patchStates", {}).items():
-                stateConfig.setdefault(k, {})
-                stateConfig[k].update(v)
+                state_config.setdefault(k, {})
+                state_config[k].update(v)
 
             thread = PatchThread(pip, self)
             self.threads.append(thread)
             thread.start()
 
-        self.loadConfig()
-        self.protocolComboChanged()
+        self.load_config()
+        self.protocol_combo_changed()
 
     def window(self):
         return self.win
 
-    def addPointsToggled(self):
-        cammod = self.getCameraModule()
+    def add_points_toggled(self):
+        cammod = self.get_camera_module()
         if self.ui.addPointsBtn.isChecked():
             self.ui.startBtn.setChecked(False)
-            cammod.window().getView().scene().sigMouseClicked.connect(self.cameraModuleClicked)
+            cammod.window().getView().scene().sigMouseClicked.connect(self.camera_module_clicked)
         else:
-            Qt.disconnect(cammod.window().getView().scene().sigMouseClicked, self.cameraModuleClicked)
+            Qt.disconnect(cammod.window().getView().scene().sigMouseClicked, self.camera_module_clicked)
 
-    def getCameraModule(self):
+    def get_camera_module(self):
         if self._cammod is None:
             manager = getManager()
             mods = manager.listInterfaces("cameraModule")
@@ -125,7 +125,7 @@ class AutopatchModule(Module):
             self._cammod = manager.getModule(mods[0])
         return self._cammod
 
-    def getCameraDevice(self):
+    def get_camera_device(self):
         if self._camdev is None:
             manager = getManager()
             camName = self.config.get("imagingDevice", None)
@@ -140,25 +140,25 @@ class AutopatchModule(Module):
             self._camdev = manager.getDevice(camName)
         return self._camdev
 
-    def protocolComboChanged(self):
+    def protocol_combo_changed(self):
         prot = str(self.ui.protocolCombo.currentText())
-        self.jobQueue.setProtocol(allPatchProtocols()[prot])
+        self.job_queue.setProtocol(all_patch_protocols()[prot])
 
-    def cameraModuleClicked(self, ev):
+    def camera_module_clicked(self, ev):
         if ev.button() != Qt.Qt.LeftButton:
             return
 
-        camera = self.getCameraDevice()
+        camera = self.get_camera_device()
         cameraPos = camera.mapToGlobal([0, 0, 0])
 
         globalPos = self._cammod.window().getView().mapSceneToView(ev.scenePos())
         globalPos = [globalPos.x(), globalPos.y(), cameraPos[2]]
 
-        self.addPatchAttempt(globalPos)
+        self.add_patch_attempt(globalPos)
 
-    def addPatchAttempt(self, position):
-        pid = self._nextPointID
-        self._nextPointID += 1
+    def add_patch_attempt(self, position):
+        pid = self._next_point_id
+        self._next_point_id += 1
 
         item = Qt.QTreeWidgetItem([str(pid), "", "", ""])
         self.ui.pointTree.addTopLevelItem(item)
@@ -179,50 +179,50 @@ class AutopatchModule(Module):
 
         pa = PatchAttempt(pid, position, item, target)
         item.patchAttempt = pa
-        self.patchAttempts.append(pa)
+        self.patch_attempts.append(pa)
 
-        self.jobQueue.setJobs(self.patchAttempts)
+        self.job_queue.setJobs(self.patch_attempts)
 
-        pa.statusChanged.connect(self.jobStatusChanged)
+        pa.statusChanged.connect(self.job_status_changed)
 
         return pa
 
-    def selectedProtocol(self):
-        return allPatchProtocols()[str(self.ui.protocolCombo.currentText())]
+    def selected_protocol(self):
+        return all_patch_protocols()[str(self.ui.protocolCombo.currentText())]
 
-    def removePointsClicked(self):
+    def remove_points_clicked(self):
         sel = self.ui.pointTree.selectedItems()
         for item in sel:
-            self.removePatchAttempt(item.patchAttempt)
+            self.remove_patch_attempt(item.patchAttempt)
 
-    def removePatchAttempt(self, pa):
-        self.patchAttempts.remove(pa)
+    def remove_patch_attempt(self, pa):
+        self.patch_attempts.remove(pa)
 
         index = self.ui.pointTree.indexOfTopLevelItem(pa.treeItem)
         self.ui.pointTree.takeTopLevelItem(index)
 
         pa.targetItem.scene().removeItem(pa.targetItem)
 
-        self.jobQueue.setJobs(self.patchAttempts)
+        self.job_queue.setJobs(self.patch_attempts)
 
-    def cameraTransformChanged(self):
-        cam = self.getCameraDevice()
+    def camera_transform_changed(self):
+        cam = self.get_camera_device()
         fdepth = cam.mapToGlobal([0, 0, 0])[2]
 
-        for pa in self.patchAttempts:
+        for pa in self.patch_attempts:
             pa.targetItem.setFocusDepth(fdepth)
 
-    def startBtnToggled(self):
+    def start_btn_toggled(self):
         if self.ui.startBtn.isChecked():
             self.ui.startBtn.setText("Stop")
             self.ui.addPointsBtn.setChecked(False)
-            self.jobQueue.setJobs(self.patchAttempts)
-            self.jobQueue.setEnabled(True)
+            self.job_queue.setJobs(self.patch_attempts)
+            self.job_queue.setEnabled(True)
         else:
             self.ui.startBtn.setText("Start")
-            self.jobQueue.setEnabled(False)
+            self.job_queue.setEnabled(False)
 
-    def abortClicked(self):
+    def abort_clicked(self):
         """Stop all running jobs.
         """
         self.ui.startBtn.setChecked(False)
@@ -231,58 +231,58 @@ class AutopatchModule(Module):
             thread.wait()
             thread.start()
 
-    def resetClicked(self):
+    def reset_clicked(self):
         """Reset the state of all points so they can be run again.
         This is mostly meant for development to allow quick iteration.
         """
-        for pa in self.patchAttempts:
+        for pa in self.patch_attempts:
             pa.reset()
-        self.jobQueue.setJobs(self.patchAttempts)
+        self.job_queue.setJobs(self.patch_attempts)
 
-    def closeEvent(self, ev):
+    def close_event(self, ev):
         self.quit()
-        return Qt.QWidget.closeEvent(self.win, ev)
+        return Qt.QWidget.close_event(self.win, ev)
 
     def quit(self):
         self.ui.startBtn.setChecked(False)
         self.ui.addPointsBtn.setChecked(False)
         for thread in self.threads:
             thread.stop()
-        for pa in self.patchAttempts[:]:
-            self.removePatchAttempt(pa)
-        for item in self.plateCenterLines + self.wellCircles:
+        for pa in self.patch_attempts[:]:
+            self.remove_patch_attempt(pa)
+        for item in self.plate_center_lines + self.wellCircles:
             scene = item.scene()
             if scene is not None:
                 scene.removeItem(item)
-        self.saveConfig()
+        self.save_config()
         return Module.quit(self)
 
-    def jobStatusChanged(self, job, status):
+    def job_status_changed(self, job, status):
         item = job.treeItem
         pip = job.pipette.name() if job.pipette is not None else ""
         item.setText(1, "" if job.protocol is None else job.protocol.name)
         item.setText(2, pip)
         item.setText(3, status)
         pipnum = pip[12:] if pip.lower().startswith("patchpipette") else pip
-        statusTxt = self.pipStatusText.get(pip)
+        statusTxt = self.pip_status_text.get(pip)
         if statusTxt is not None:
             statusTxt.setText(f"{pipnum}: {status}")
 
-    def deviceStatusChanged(self, device, status):
+    def device_status_changed(self, device, status):
         # todo: implement per-pipette UI
         print(f"Device status: {device}, {status}")
 
-    def treeSelectionChanged(self):
+    def tree_selection_changed(self):
         sel = self.ui.pointTree.selectedItems()
         if len(sel) == 1:
             # TODO: something more user-friendly; this is just for development
             log = sel[0].patchAttempt.formatLog()
             self.ui.resultText.setPlainText(log)
 
-    def plateCenter(self):
-        return self._plateCenter
+    def plate_center(self):
+        return self._plate_center
 
-    def saveConfig(self):
+    def save_config(self):
         geom = self.win.geometry()
         config = {
             # 'plateCenter': list(self._plateCenter),
@@ -293,7 +293,7 @@ class AutopatchModule(Module):
         man = getManager()
         man.writeConfigFile(config, configfile)
 
-    def loadConfig(self):
+    def load_config(self):
         configfile = os.path.join("modules", self.name + ".cfg")
         man = getManager()
         config = man.readConfigFile(configfile)
@@ -306,19 +306,19 @@ class AutopatchModule(Module):
         # if 'plateCenter' in config:
         #     self.setPlateCenter(config['plateCenter'])
 
-    def lockStageBtnToggled(self, v):
-        if self._stageLockRequest is not None:
-            self._stageLockRequest.release()
-            self._stageLockRequest.sigFinished.disconnect(self.stageLockAcquired)
-            self._stageLockRequest = None
+    def lock_stage_btn_toggled(self, v):
+        if self._stage_lock_request is not None:
+            self._stage_lock_request.release()
+            self._stage_lock_request.sigFinished.disconnect(self.stage_lock_acquired)
+            self._stage_lock_request = None
 
         if v is True:
             # acquire stage lock with higher priority than patch threads
-            self._stageLockRequest = self.stageCameraLock.acquire(priority=10)
-            self._stageLockRequest.sigFinished.connect(self.stageLockAcquired)
+            self._stage_lock_request = self.stage_camera_lock.acquire(priority=10)
+            self._stage_lock_request.sigFinished.connect(self.stage_lock_acquired)
             self.ui.lockStageBtn.setText("Locking stage...")
         else:
             self.ui.lockStageBtn.setText("Lock stage")
 
-    def stageLockAcquired(self, req):
+    def stage_lock_acquired(self, req):
         self.ui.lockStageBtn.setText("Stage locked!")

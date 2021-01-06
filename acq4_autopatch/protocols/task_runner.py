@@ -28,8 +28,8 @@ class TaskRunnerPatchProtocol(PatchProtocol):
         PatchProtocol.__init__(self, patchThread, patchAttempt)
         self.dev = patchThread.dev
         self.module = patchThread.module
-        self.stageCameraLock = self.module.stageCameraLock
-        self.camera = self.module.getCameraDevice()
+        self.stageCameraLock = self.module.stage_camera_lock
+        self.camera = self.module.get_camera_device()
         self.scope = self.camera.getScopeDevice()
 
         man = getManager()
@@ -161,9 +161,9 @@ class TaskRunnerPatchProtocol(PatchProtocol):
         illum.SetRLIllumination(2)
         time.sleep(1)
 
+        cameraParams = self.camera.getParams()
         try:
             # take another picture
-            cameraParams = self.camera.getParams()
             self.camera.setParams({"exposure": 0.05, "binning": (4, 4)})
 
             frame = self.camera.acquireFrames(n=1, stack=False)

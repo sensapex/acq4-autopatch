@@ -88,9 +88,9 @@ class TestPatchProtocol(PatchProtocol):
         self.dev = patchThread.dev
         self.module = patchThread.module
         self.clickEvent = threading.Event()
-        self.stageCameraLock = self.module.stageCameraLock
-        self.camera = self.module.getCameraDevice()
-        self.cameraMod = self.module.getCameraModule()
+        self.stageCameraLock = self.module.stage_camera_lock
+        self.camera = self.module.get_camera_device()
+        self.cameraMod = self.module.get_camera_module()
         self.lines = None
 
     def runPatchProtocol(self):
