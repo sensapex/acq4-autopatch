@@ -36,9 +36,6 @@ class JobQueue(object):
             self.queued_jobs = [j for j in jobs if self.protocol.name not in j.assigned_protocols]
 
     def request_job(self, patch_pipette):
-        # Simple implementation: return the job nearest to the current pipette position.
-        # Only jobs in the same quadrant as the pipette are considered.
-
         with self.lock:
             if not self.enabled:
                 return None
@@ -50,10 +47,8 @@ class JobQueue(object):
             lower = np.arctan2(*boundaries[0][::-1])
             upper = np.arctan2(*boundaries[1][::-1])
 
-            # TODO the center of the jobs maybe needs to account for all currently active jobs
-            # TODO the selection of job must account for safe distances between pipette tips
-
             positions = np.array([job.position[:2] for job in self.queued_jobs])
+            # TODO the center might only need to account for currently active or queued jobs
             all_positions = np.array([job.position[:2] for job in self.all_jobs])
             center = np.mean(all_positions, axis=0)
 
@@ -68,6 +63,7 @@ class JobQueue(object):
                 slice_mask = (angles < upper) & (angles > lower)
             dist = (diff ** 2).sum(axis=1) ** 0.5
             dist[~slice_mask] = np.inf
+            # TODO the selection of job must account for safe distances between pipette tips
             closest = int(np.argmin(dist))  # closest to the center
             if dist[closest] == np.inf:
                 return None
