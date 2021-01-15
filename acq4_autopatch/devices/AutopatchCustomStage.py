@@ -3,13 +3,17 @@ from acq4.devices.Sensapex import Sensapex
 
 
 class AutopatchCustomStage(Sensapex):
-    """Implement extra motion planning to prevent collisions.
+    """
+    Implement extra motion planning to prevent collisions with the sides of the wells.
     """
 
     def _move(self, abs, rel, speed, linear, protected=True):
         if not protected:
             return Sensapex._move(self, abs, rel, speed, linear)
 
+        # TODO document config
+        # TODO get rid of the implicit units
+        # TODO make this usable by pipette motion controllers?
         wells = np.array(self.config["wellPositions"]) * 1e9
         radius = self.config["wellRadius"] * 1e9
         wellZ = self.config["wellMaxZ"] * 1e9
