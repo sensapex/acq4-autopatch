@@ -218,7 +218,7 @@ class AutopatchModule(Module):
         target.circles = []
         for r in (3e-6, 5e-6):
             c = pg.QtGui.QGraphicsEllipseItem(0, 0, 1, 1)
-            c.scale(r * 2, r * 2)
+            c.setTransform(pg.QtGui.QTransform.fromScale(r * 2, r * 2), True)
             c.setPos(-r, -r)
             c.setPen(pg.mkPen("b"))
             c.setParentItem(target)

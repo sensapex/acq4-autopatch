@@ -33,5 +33,5 @@ setup(
     packages=packages,
     package_data={"": ["main_window.ui"]},
     url="https://github.com/sensapex/acq4-autopatch",
-    version="0.0.5",
+    version="0.0.6",
 )
