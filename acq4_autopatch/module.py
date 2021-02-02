@@ -43,6 +43,30 @@ def _calculate_pipette_boundaries(patch_devices):
 
 
 class AutopatchModule(Module):
+    """
+    Config
+    ----------
+
+    imagingDevice : str
+        Usually "Camera".
+    patchDevices : dict
+        The patch pipette device names and their locations. E.g.::
+            PatchPipette1: (0, 0)  # bottom-left quad
+            PatchPipette2: (50*mm, 0)  # bottom-right quad
+    plateCenter : tuple
+        Global 3d coordinates for the center of the plate. E.g. (0, 0, 0)
+    wellPositions : list(tuple)
+        Global 2d coordinates of the wells. E.g. [(0, 0), (50*mm, 0)]
+    patchStates : dict
+        For each patch state, overrides for config options. See
+        acq4/devices/PatchPipette/states.py in the ACQ4 source code for the
+        full list of those. E.g.::
+            seal:
+                autoSealTimeout: 60
+                pressureMode: 'auto'
+            cell attached:
+                autoBreakInDelay: 5.0
+    """
     moduleDisplayName = "Autopatch"
     moduleCategory = "Acquisition"
 
@@ -104,9 +128,6 @@ class AutopatchModule(Module):
 
         cam = self.get_camera_device()
         cam.sigGlobalTransformChanged.connect(self.camera_transform_changed)
-
-        # allow to disable safe move in config
-        self.safe_move_enabled = config.get("safeMove", True)
 
         self.job_queue = JobQueue(config["patchDevices"], self)
 

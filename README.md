@@ -29,7 +29,6 @@ file:
                 PatchPipette4: (50*mm, 50*mm)  # top-right quad
             plateCenter: (0, 0, 0)
             wellPositions: [(0, 0), (50*mm, 0), (0, 50*mm), (50*mm, 50*mm)]
-            safeMove: True
             patchStates:
                 cell detect:
                     maxAdvanceDistancePastTarget: 1*um
@@ -42,6 +41,13 @@ file:
                     approachHeight: 3*mm
                     cleanSequence: [(-35e3, 1.0), (65e3, 1.5)] * 5
                     rinseSequence: [(-35e3, 3.0), (65e3, 15.0)]
+            cameraChannels:
+                # Use different (exposure, trigger) DAQ lines for each pipette device
+                PatchPipette1: ('/Dev1/port0/line0', '/Dev1/port0/line1')
+                PatchPipette2: ('/Dev2/port0/line0', '/Dev2/port0/line1')
+                PatchPipette3: ('/Dev3/port0/line0', '/Dev3/port0/line1')
+                PatchPipette4: ('/Dev4/port0/line0', '/Dev4/port0/line1')
+
 ```
 
 # Usage
