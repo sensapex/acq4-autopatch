@@ -288,7 +288,7 @@ class AutopatchModule(Module):
 
     def close_event(self, ev):
         self.quit()
-        return Qt.QWidget.close_event(self.win, ev)
+        return Qt.QWidget.closeEvent(self.win, ev)
 
     def quit(self):
         self.ui.startBtn.setChecked(False)

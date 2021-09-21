@@ -1,16 +1,15 @@
+import numpy as np
 import sys
 import time
 
-import numpy as np
-
-try:
-    import queue
-except ImportError:
-    import Queue as queue
 from acq4.Manager import getManager
 from acq4.util import Qt
 from acq4.util.threadrun import runInGuiThread
 from .patch_protocol import PatchProtocol
+try:
+    import queue
+except ImportError:
+    import Queue as queue
 
 
 class TaskRunnerPatchProtocol(PatchProtocol):
