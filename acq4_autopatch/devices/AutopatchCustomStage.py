@@ -3,64 +3,59 @@ from acq4.devices.Sensapex import Sensapex
 
 
 class AutopatchCustomStage(Sensapex):
-    """
-    Implement extra motion planning to prevent collisions with the sides of the wells.
+    """Implement extra motion planning to prevent collisions.
     """
 
     def _move(self, abs, rel, speed, linear, protected=True):
         if not protected:
             return Sensapex._move(self, abs, rel, speed, linear)
 
-        # TODO document config
-        # TODO get rid of the implicit units
-        # TODO make this usable by pipette motion controllers?
-        wells = np.array(self.config["wellPositions"]) * 1e9
-        radius = self.config["wellRadius"] * 1e9
-        wellZ = self.config["wellMaxZ"] * 1e9
-        safeZ = self.config["safeMaxZ"] * 1e9
+        scale = self.scale[2]
+        wells = np.array(self.config["wellPositions"]) / scale
+        radius = self.config["wellRadius"] / scale
+        max_z_in_well = self.config["insideWellMaxZ"] / scale
+        max_z_out_of_well = self.config["outOfWellMaxZ"] / scale
 
-        pos1 = np.array(self.getPosition())
-        pos2 = np.array(self._toAbsolutePosition(abs, rel))
+        current_pos = np.array(self.getPosition())
+        dest_pos = np.array(self._toAbsolutePosition(abs, rel))
 
         # lateral distances from center of each well
-        dist1 = ((wells - pos1[np.newaxis, :2]) ** 2).sum(axis=1) ** 0.5
-        dist2 = ((wells - pos2[np.newaxis, :2]) ** 2).sum(axis=1) ** 0.5
+        current_dist_from_wells = ((wells - current_pos[np.newaxis, :2]) ** 2).sum(axis=1) ** 0.5
+        dest_dist_from_wells = ((wells - dest_pos[np.newaxis, :2]) ** 2).sum(axis=1) ** 0.5
 
-        # closest well
-        well1 = np.argmin(dist1)
-        well2 = np.argmin(dist2)
+        current_closest_well = np.argmin(current_dist_from_wells)
+        dest_closest_well = np.argmin(dest_dist_from_wells)
 
         # are we starting / ending in the same well?
-        startInWell = np.any(dist1 < radius)
-        endInWell = np.any(dist2 < radius)
-        changeWell = well1 != well2
+        start_in_well = np.any(current_dist_from_wells < radius)
+        end_in_well = np.any(dest_dist_from_wells < radius)
+        change_well = current_closest_well != dest_closest_well
 
         # don't move too high
-        maxZ = wellZ if endInWell else safeZ
-        pos2[2] = min(pos2[2], maxZ)
+        max_z = max_z_in_well if end_in_well else max_z_out_of_well
+        dest_pos[2] = min(dest_pos[2], max_z)
 
-        if startInWell and endInWell and not changeWell:
+        if start_in_well and end_in_well and not change_well:
             # no danger here, just move
-            return Sensapex._move(self, abs=pos2, rel=None, speed=speed, linear=linear)
+            return Sensapex._move(self, abs=dest_pos, rel=None, speed=speed, linear=linear)
 
-        # decide on a safe path
         path = []
 
         # First move down to safe Z if needed
-        lastZ = pos1[2]
-        if pos1[2] > safeZ:
-            wp1 = pos1.copy()
-            wp1[2] = min(safeZ, pos2[2])
-            lastZ = wp1[2]
+        last_z = current_pos[2]
+        if current_pos[2] > max_z_out_of_well:
+            wp1 = current_pos.copy()
+            wp1[2] = min(max_z_out_of_well, dest_pos[2])
+            last_z = wp1[2]
             path.append({"abs": wp1, "speed": "fast", "protected": False})
 
         # Next move just XY
-        wp2 = pos2.copy()
-        wp2[2] = lastZ
+        wp2 = dest_pos.copy()
+        wp2[2] = last_z
         path.append({"abs": wp2, "speed": speed, "protected": False})
 
         # Finally correct Z if needed
-        if wp2[2] != pos2[2]:
-            path.append({"abs": pos2, "speed": "fast", "protected": False})
+        if wp2[2] != dest_pos[2]:
+            path.append({"abs": dest_pos, "speed": "fast", "protected": False})
 
         return self.movePath(path)
