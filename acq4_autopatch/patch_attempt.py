@@ -26,10 +26,14 @@ class PatchAttempt(Qt.QObject):
         self.protocol = None
         self.pipette = None
         self.status = None
-        self.result = {}
+        self.is_done = False
         self.error = None
         self.log = []
         self.log_file = None
+
+    def finish(self):
+        self.is_done = True
+        self.stop_logging()
 
     def reset(self):
         self.stop_logging()
@@ -37,7 +41,6 @@ class PatchAttempt(Qt.QObject):
         self.pipette = None
         self.pipette_error = None
         self.set_status("reset")
-        self.result = {}
         self.error = None
         self.log = []
         self.status = None
@@ -109,7 +112,7 @@ class PatchAttempt(Qt.QObject):
         for the pipette position error.
         """
         pos = np.array(self.position)
-        if self.pipette_error is not None:
+        if self.pipette_error is not None and np.all(np.isfinite(self.pipette_error)):
             pos -= self.pipette_error
         return pos
 

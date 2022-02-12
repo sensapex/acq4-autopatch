@@ -138,13 +138,14 @@ class TaskRunnerPatchProtocol(PatchProtocol):
 
         man = getManager()
         turret = man.getDevice("FilterTurret")
-        illum = man.getDevice("Illumination")
+        t_lamp = man.getDevice("Illumination")
+        rl_shutter = man.getDevice("ReflectiveLightShutter")
 
         # set filter wheel / illumination
         turret.setPosition(1).wait()
-        time.sleep(2)  # scope automatically changes RL/TL settings, sometimes in a bad way. sleep and set manually:
-        illum.SetTLIllumination(1)
-        illum.SetRLIllumination(1)
+        time.sleep(2)  # force bright field for good picture
+        t_lamp.setActive(True)
+        rl_shutter.setIsOpen(False)
 
         # take a picture
         pa.set_status("say cheese!")
@@ -155,9 +156,9 @@ class TaskRunnerPatchProtocol(PatchProtocol):
 
         # switch to RL
         turret.setPosition(0).wait()
-        time.sleep(2)  # scope automatically changes RL/TL settings, sometimes in a bad way. sleep and set manually:
-        illum.SetTLIllumination(2)
-        illum.SetRLIllumination(2)
+        time.sleep(2)  # turn off bright field
+        t_lamp.setActive(False)
+        rl_shutter.setIsOpen(True)
         time.sleep(1)
 
         cameraParams = self.camera.getParams()
@@ -208,8 +209,8 @@ class TaskRunnerPatchProtocol(PatchProtocol):
             # switch off RL
             turret.setPosition(1).wait()
             time.sleep(2)  # scope automatically changes RL/TL settings, sometimes in a bad way. sleep and set manually:
-            illum.SetTLIllumination(1)
-            illum.SetRLIllumination(1)
+            t_lamp.SetTLIllumination(1)
+            t_lamp.SetRLIllumination(1)
 
             self.camera.setParams(cameraParams)  # , autoRestart=True, autoCorrect=True)
 

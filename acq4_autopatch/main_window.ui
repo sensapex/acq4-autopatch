@@ -14,7 +14,16 @@
    <string>Autopatch</string>
   </property>
   <layout class="QGridLayout" name="gridLayout">
-   <property name="margin">
+   <property name="leftMargin">
+    <number>3</number>
+   </property>
+   <property name="topMargin">
+    <number>3</number>
+   </property>
+   <property name="rightMargin">
+    <number>3</number>
+   </property>
+   <property name="bottomMargin">
     <number>3</number>
    </property>
    <item row="1" column="0">
@@ -98,17 +107,44 @@
           <string>Acquisition</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_2">
-          <item row="0" column="5">
+          <item row="0" column="3">
+           <widget class="QPushButton" name="lockStageBtn">
+            <property name="text">
+             <string>Lock Stage</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="7">
+           <widget class="QPushButton" name="resetBtn">
+            <property name="text">
+             <string>Reset</string>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="6">
            <widget class="QPushButton" name="abortBtn">
             <property name="text">
              <string>Abort</string>
             </property>
            </widget>
           </item>
+          <item row="0" column="2">
+           <widget class="QPushButton" name="startBtn">
+            <property name="text">
+             <string>Start</string>
+            </property>
+            <property name="checkable">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
           <item row="0" column="0">
            <widget class="QComboBox" name="protocolCombo"/>
           </item>
-          <item row="0" column="3">
+          <item row="0" column="4">
            <spacer name="horizontalSpacer_2">
             <property name="orientation">
              <enum>Qt::Horizontal</enum>
@@ -121,32 +157,8 @@
             </property>
            </spacer>
           </item>
-          <item row="0" column="6">
-           <widget class="QPushButton" name="resetBtn">
-            <property name="text">
-             <string>Reset</string>
-            </property>
-           </widget>
-          </item>
           <item row="0" column="1">
-           <widget class="QPushButton" name="startBtn">
-            <property name="text">
-             <string>Start</string>
-            </property>
-            <property name="checkable">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="2">
-           <widget class="QPushButton" name="lockStageBtn">
-            <property name="text">
-             <string>Lock Stage</string>
-            </property>
-            <property name="checkable">
-             <bool>true</bool>
-            </property>
-           </widget>
+           <widget class="QComboBox" name="jobDistributionStrategyCombo"/>
           </item>
          </layout>
         </widget>
@@ -157,27 +169,17 @@
           <string>Pipettes</string>
          </property>
          <layout class="QGridLayout" name="gridLayout_5">
-          <item row="0" column="0">
-           <widget class="QLineEdit" name="pip4Status">
+          <item row="1" column="2">
+           <widget class="QLineEdit" name="pip2Status">
             <property name="text">
-             <string>4:</string>
+             <string>2:</string>
             </property>
             <property name="readOnly">
              <bool>true</bool>
             </property>
            </widget>
           </item>
-          <item row="1" column="0">
-           <widget class="QLineEdit" name="pip3Status">
-            <property name="text">
-             <string>3:</string>
-            </property>
-            <property name="readOnly">
-             <bool>true</bool>
-            </property>
-           </widget>
-          </item>
-          <item row="0" column="1">
+          <item row="1" column="1">
            <widget class="QLineEdit" name="pip1Status">
             <property name="text">
              <string>1:</string>
@@ -187,10 +189,20 @@
             </property>
            </widget>
           </item>
-          <item row="1" column="1">
-           <widget class="QLineEdit" name="pip2Status">
+          <item row="0" column="1">
+           <widget class="QLineEdit" name="pip3Status">
             <property name="text">
-             <string>2:</string>
+             <string>3:</string>
+            </property>
+            <property name="readOnly">
+             <bool>true</bool>
+            </property>
+           </widget>
+          </item>
+          <item row="0" column="2">
+           <widget class="QLineEdit" name="pip4Status">
+            <property name="text">
+             <string>4:</string>
             </property>
             <property name="readOnly">
              <bool>true</bool>

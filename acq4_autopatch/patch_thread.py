@@ -65,4 +65,4 @@ class PatchThread(Thread):
             except Exception as exc:
                 pa.set_error(sys.exc_info())
             finally:
-                pa.stop_logging()
+                pa.finish()

@@ -1,6 +1,9 @@
 from __future__ import print_function, division
 
 import os
+import threading
+from importlib import import_module
+
 import numpy as np
 
 import pyqtgraph as pg
@@ -42,6 +45,14 @@ def _calculate_pipette_boundaries(patch_devices):
     return {pipettes[orig_i]: boundaries_for_index(i) for i, orig_i in enumerate(ordered_indexes)}
 
 
+def _import_member_from_string(full_name):
+    pieces = full_name.split(".")
+    thing_name = pieces[-1]
+    mod_name = ".".join(pieces[:-1])
+    module = import_module(mod_name)
+    return getattr(module, thing_name)
+
+
 class AutopatchModule(Module):
     """
     Config
@@ -70,6 +81,8 @@ class AutopatchModule(Module):
     moduleDisplayName = "Autopatch"
     moduleCategory = "Acquisition"
 
+    sigThreadsRestarted = Qt.Signal()
+
     def __init__(self, manager, name, config):
         # lock used to serialize access to shared stage/camera hardware
         self.stage_camera_lock = PriorityLock()
@@ -88,10 +101,15 @@ class AutopatchModule(Module):
         self.win.closeEvent = self.close_event
         self.ui = MainForm()
         self.ui.setupUi(self.win)
+        self.job_queue = JobQueue(self)
 
-        for protocol in all_patch_protocols():
+        for protocol in self.all_patch_protocols():
             self.ui.protocolCombo.addItem(protocol)
-
+        for name in self.config.get("extraJobDistributionStrategies", []):
+            self.job_queue.add_job_strategy(name, _import_member_from_string(name))
+        for strategy in self.job_queue.job_strategies:
+            self.ui.jobDistributionStrategyCombo.addItem(strategy)
+        self.ui.jobDistributionStrategyCombo.setCurrentText(self.job_queue.current_strategy_name)
         for i, w in enumerate([40, 130, 100, 400]):
             self.ui.pointTree.header().resizeSection(i, w)
 
@@ -107,33 +125,17 @@ class AutopatchModule(Module):
         self.ui.abortBtn.clicked.connect(self.abort_clicked)
         self.ui.resetBtn.clicked.connect(self.reset_clicked)
         self.ui.pointTree.itemSelectionChanged.connect(self.tree_selection_changed)
+        self.ui.jobDistributionStrategyCombo.currentIndexChanged.connect(self.job_strategy_combo_changed)
         self.ui.protocolCombo.currentIndexChanged.connect(self.protocol_combo_changed)
         self.ui.lockStageBtn.toggled.connect(self.lock_stage_btn_toggled)
 
-        cam_mod = self.get_camera_module()
-
-        self.plate_center_lines = [
-            pg.InfiniteLine(pos=self.plate_center[:2], angle=0, movable=False),
-            pg.InfiniteLine(pos=self.plate_center[:2], angle=90, movable=False),
-        ]
-        for line in self.plate_center_lines:
-            cam_mod.window().addItem(line)
-        radius = 5e-3
-        self.well_circles = [
-            Qt.QGraphicsEllipseItem(x - radius, y - radius, radius * 2, radius * 2) for x, y in config["wellPositions"]
-        ]
-        for wc in self.well_circles:
-            wc.setPen(pg.mkPen("y"))
-            cam_mod.window().addItem(wc)
+        self.sigThreadsRestarted.connect(self.threads_restarted)
 
         cam = self.get_camera_device()
         cam.sigGlobalTransformChanged.connect(self.camera_transform_changed)
 
-        self.job_queue = JobQueue(config["patchDevices"], self)
-
         self.threads = []
-        man = getManager()
-        patch_devices = [man.getDevice(pipName) for pipName in config["patchDevices"]]
+        patch_devices = self.get_patch_devices()
         self.boundaries_by_pipette = _calculate_pipette_boundaries(patch_devices)
         for pip in patch_devices:
             pip.setActive(True)
@@ -152,8 +154,14 @@ class AutopatchModule(Module):
         self.load_config()
         self.protocol_combo_changed()
 
+        self._thread_restarter_thread = None
+
     def window(self):
         return self.win
+
+    def get_patch_devices(self):
+        man = getManager()
+        return [man.getDevice(pipName) for pipName in self.config["patchDevices"]]
 
     def add_points_toggled(self):
         cammod = self.get_camera_module()
@@ -187,9 +195,20 @@ class AutopatchModule(Module):
             self._camdev = manager.getDevice(camName)
         return self._camdev
 
+    def all_patch_protocols(self):
+        protocols = all_patch_protocols()
+        for full_name in self.config.get("extraProtocols", []):
+            cls = _import_member_from_string(full_name)
+            protocols[cls.name] = cls
+        return protocols
+
+    def job_strategy_combo_changed(self):
+        strategy = str(self.ui.jobDistributionStrategyCombo.currentText())
+        self.job_queue.set_job_distribution_strategy(strategy)
+
     def protocol_combo_changed(self):
         prot = str(self.ui.protocolCombo.currentText())
-        self.job_queue.set_protocol(all_patch_protocols()[prot])
+        self.job_queue.set_protocol(self.all_patch_protocols()[prot])
 
     def camera_module_clicked(self, ev):
         if ev.button() != Qt.Qt.LeftButton:
@@ -235,7 +254,7 @@ class AutopatchModule(Module):
         return pa
 
     def selected_protocol(self):
-        return all_patch_protocols()[str(self.ui.protocolCombo.currentText())]
+        return self.all_patch_protocols()[str(self.ui.protocolCombo.currentText())]
 
     def remove_points_clicked(self):
         sel = self.ui.pointTree.selectedItems()
@@ -273,10 +292,7 @@ class AutopatchModule(Module):
         """Stop all running jobs.
         """
         self.ui.startBtn.setChecked(False)
-        for thread in self.threads:
-            thread.stop()
-            thread.wait()
-            thread.start()
+        self.restart_threads()
 
     def reset_clicked(self):
         """Reset the state of all points so they can be run again.
@@ -297,10 +313,6 @@ class AutopatchModule(Module):
             thread.stop()
         for pa in self.patch_attempts[:]:
             self.remove_patch_attempt(pa)
-        for item in self.plate_center_lines + self.well_circles:
-            scene = item.scene()
-            if scene is not None:
-                scene.removeItem(item)
         self.save_config()
         return Module.quit(self)
 
@@ -366,3 +378,23 @@ class AutopatchModule(Module):
 
     def stage_lock_acquired(self, req):
         self.ui.lockStageBtn.setText("Stage locked!")
+
+    def restart_threads(self):
+        self.ui.abortBtn.setEnabled(False)
+        self.ui.abortBtn.setText('Aborting..')
+        self._thread_restarter_thread = threading.Thread(target=self._restart_threads, daemon=True)
+        self._thread_restarter_thread.start()
+
+    def _restart_threads(self):
+        for thread in self.threads:
+            thread.stop()
+        for thread in self.threads:
+            thread.wait()
+            thread.start()
+        self.sigThreadsRestarted.emit()
+
+    def threads_restarted(self):
+        self.ui.abortBtn.setText('Abort')
+        self.ui.abortBtn.setEnabled(True)
+
+

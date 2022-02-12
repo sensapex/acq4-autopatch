@@ -41,12 +41,12 @@ class PatchProtocol(object):
         """
         self.patchThread.checkStop()
 
-    def lock(self, lock, timeout=20.0):
+    def lock(self, lock, timeout=30.0):
         """Return a context manager that attempts to lock a mutex while checking for abort requests.
         """
         return Locker(self, lock, timeout)
 
-    def wait(self, futures, timeout=20.0):
+    def wait(self, futures, timeout=30.0):
         """Wait for multiple futures to complete while also checking for abort requests.
         """
         if len(futures) == 0:
