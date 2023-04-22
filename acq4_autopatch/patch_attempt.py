@@ -4,8 +4,7 @@ from collections import OrderedDict
 
 import numpy as np
 import pyqtgraph as pg
-from acq4.util import Qt
-from pyqtgraph import ptime
+from acq4.util import Qt, ptime
 
 
 class PatchAttempt(Qt.QObject):
