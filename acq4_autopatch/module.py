@@ -170,7 +170,7 @@ class AutopatchModule(Module):
         target.setFocusDepth(position[2])
         target.circles = []
         for r in (3e-6, 5e-6):
-            c = pg.QtGui.QGraphicsEllipseItem(0, 0, 1, 1)
+            c = Qt.QtGui.QGraphicsEllipseItem(0, 0, 1, 1)
             c.scale(r * 2, r * 2)
             c.setPos(-r, -r)
             c.setPen(pg.mkPen("b"))
