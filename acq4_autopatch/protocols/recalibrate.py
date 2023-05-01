@@ -167,7 +167,7 @@ class AutoRecalibrateProtocol(RecalibrateProtocol):
 
     def _showErrorLine(self, pt1, pt2):
         self._removeErrorLine()
-        self.line = pg.QtGui.QGraphicsLineItem(pt1[0], pt1[1], pt2[0], pt2[1])
+        self.line = Qt.QGraphicsLineItem(pt1[0], pt1[1], pt2[0], pt2[1])
         self.line.setPen(pg.mkPen("r"))
         self.cameraMod.window().addItem(self.line)
 
